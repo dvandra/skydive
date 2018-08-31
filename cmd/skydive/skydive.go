@@ -36,7 +36,7 @@ import (
 	"github.com/skydive-project/skydive/cmd/config"
 	"github.com/skydive-project/skydive/cmd/version"
 	"github.com/skydive-project/skydive/logging"
-	"github.com/spf13/cobra"     // https://github.com/spf13/cobra   github link to original cobra repo
+	"github.com/spf13/cobra"     
 )
 
 // RootCmd describes the skydive root command
