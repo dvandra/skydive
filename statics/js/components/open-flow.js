@@ -266,7 +266,6 @@ var BridgeLayout = (function () {
   BridgeLayout.prototype.extract = function () {
     var itfs = {};
     var rules = [];
-    var rulesUUID = new Set();                 // added on check tests, by p.c.
     var children = this.graph.getTargets(this.bridge);
     for (var i = 0; i < children.length; i++) {
       var c = children[i];
@@ -280,7 +279,6 @@ var BridgeLayout = (function () {
           var rule = c.Metadata;
           summarize(rule);
           rules.push(rule);
-	  rulesUUID.add(rule.UUID);   // added on check tests, by p.c.
       }
     }
     this.rules = rules;
@@ -390,9 +388,9 @@ var BridgeLayout = (function () {
     if (p === LOCAL_PORT) return 'LOCAL';
     if (p === SAME_PORT || p === undefined) return '';
     var nodes = this.interfaces[p];
-    if (nodes === undefined) return p;
+    if (nodes === undefined) return '???';
     var port = nodes[1];
-    var portname = (port === undefined) ? '' : port.metadata.Name;
+    var portname = (port === undefined) ? '???' : port.metadata.Name;
     return portname;
   };
 
@@ -552,10 +550,6 @@ Vue.component('rule-detail', {
     bridge: {
       type: Object,
       required: true
-      },
-    realgraph: {
-      type: Object,
-      required: true
     }
   },
 
@@ -615,25 +609,6 @@ Vue.component('rule-detail', {
   },
 
   mounted: function () {
-      var self = this;
-     var handle = function(e) {
-      if (! self.bridge) return;
-      if (e.target.metadata.Type === 'ofrule' && e.source.id == self.bridge.id ) {
-        self.getRules();
-      }
-    };
-    var handleUpdate = function(n) {
-      if (n.metadata.Type == 'ofrule') {
-        self.getRules();
-      }
-    };
-     this.handler = {
-      onEdgeAdded: handle,
-      onEdgeDeleted: handle,
-      onNodeUpdated:handleUpdate
-    };
-    this.realgraph.addHandler(this.handler);
-
     this.getRules();
 
     var self = this;
@@ -682,40 +657,15 @@ Vue.component('rule-detail', {
       var queryRules = queryBridge + ".Out().Has('Type', 'ofrule')";
 
       var has = "";
-      var list = [];
-      var i = 0;
       for (var k in this.filters) {
         has += "'filters', regex('.*" + k + "=" + this.filters[k] + ".*')";
-	list[i] = k;
-	i +=1;
       }
-      var query = queryBridge + "." + queryPorts + "." ;
       if (has.length > 0) {
-	for (var k in this.filters) {
-          //queryRules += ".Has('filters', regex('.*" + k + "=" + this.filters[k] + ".*')).As('"k"')";
-          query += queryRules + ".Has('filters', regex('.*" + k + "=" + this.filters[k] + ".*')).As('" + k + "').";
-	}
+        queryRules += ".Has(" + has + ")";
       }
-      else{
-	query += queryRules + ".As('ofrules')."
-      }
-      //queryRules += ".As('ofrules')"
+      queryRules += ".As('ofrules')"
 
-      //var query = queryBridge + "." + queryPorts + "." + queryRules + ".Select('bridge', 'ovsports', 'ofrules').SubGraph()";
-
-      query += "Select('bridge', 'ovsports'";
-      
-      if (has.length > 0){
-      	for (var p in this.filters){
-	  query += ", '" + p + "'";
-        }
-      }
-      else{
-	query += ", 'ofrules'";
-      }
-      query += ").SubGraph()";
-
-		//").SubGraph()"";
+      var query = queryBridge + "." + queryPorts + "." + queryRules + ".Select('bridge', 'ovsports', 'ofrules').SubGraph()";
       console.log(query);
       this.$topologyQuery(query)
         .then(function(g) {

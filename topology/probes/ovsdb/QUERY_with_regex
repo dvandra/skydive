@@ -1,0 +1,14 @@
+G.V('ce3eccab-4b30-48dd-4671-1e8d2e3ca343').As('bridge').
+G.V('ce3eccab-4b30-48dd-4671-1e8d2e3ca343').As('bridge').Out().Has('Type', 'ovsport').As('ovsports').
+G.V('ce3eccab-4b30-48dd-4671-1e8d2e3ca343').As('bridge').Out().Has('Type', 'ofrule').Has('filters', regex('.*in_port=1.*')).As('in_port').
+G.V('ce3eccab-4b30-48dd-4671-1e8d2e3ca343').As('bridge').Out().Has('Type', 'ofrule').Has('filters', regex('.*icmp_type=136.*')).As('icmp_type').
+Select('bridge', 'ovsports', '0', '1').SubGraph()
+
+
+
+G.V('7ad0c20e-e75a-4c32-6465-8c67f010a478').As('bridge').
+G.V('7ad0c20e-e75a-4c32-6465-8c67f010a478').As('bridge').Out().Has('Type', 'ovsport').As('ovsports').
+G.V('7ad0c20e-e75a-4c32-6465-8c67f010a478').As('bridge').Out().Has('Type', 'ofrule').Has('filters', regex('.*in_port=100.*')).As('in_port').
+G.V('7ad0c20e-e75a-4c32-6465-8c67f010a478').As('bridge').Out().Has('Type', 'ofrule').Has('filters', regex('.*icmp_type=136.*')).As('icmp_type').
+Select('bridge', 'ovsports', 'in_port', 'icmp_type').SubGraph()
+
