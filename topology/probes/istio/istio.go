@@ -23,18 +23,38 @@
 package istio
 
 import (
+	kiali "github.com/kiali/kiali/kubernetes"
+
+	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/topology/graph"
 	"github.com/skydive-project/skydive/topology/probes/k8s"
 )
 
-// NewProbe create the Probe for tracking istio events
-func NewProbe(g *graph.Graph) (*k8s.Probe, error) {
-	if err := initClient(); err != nil {
+// ClusterName is the name to give to the probe cluster node
+const ClusterName = "cluster"
+
+// Probe describes the Istio probe in charge of importing
+// Istio resources into the graph
+type Probe struct {
+	*k8s.Probe
+}
+
+// NewIstioProbe creates the probe for tracking istio events
+func NewIstioProbe(g *graph.Graph) (*k8s.Probe, error) {
+	configFile := config.GetString("analyzer.topology.istio.config_file")
+	config, err := k8s.NewConfig(configFile)
+	if err != nil {
 		return nil, err
 	}
-	name2ctor := k8s.ProbeMap{
-		"cluster":         newClusterProbe,
-		"destinationrule": newDestinationRuleProbe,
+
+	client, err := kiali.NewClientFromConfig(config)
+	if err != nil {
+		return nil, err
 	}
-	return k8s.NewProbeHelper(g, "istio", &name2ctor)
+
+	subprobes := map[string]k8s.Subprobe{
+		"destinationrule": newDestinationRuleProbe(client, g),
+	}
+
+	return k8s.NewProbe("istio", ClusterName, g, subprobes, nil)
 }

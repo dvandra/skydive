@@ -1,3 +1,5 @@
+// +build !linux
+
 /*
  * Copyright (C) 2018 Red Hat, Inc.
  *
@@ -20,28 +22,26 @@
  *
  */
 
-package istio
+package lldp
 
 import (
-	kiali "github.com/hunchback/kiali/kubernetes"
-
-	"github.com/skydive-project/skydive/topology/probes/k8s"
+	"github.com/skydive-project/skydive/common"
+	"github.com/skydive-project/skydive/topology/graph"
 )
 
-var client *kiali.IstioClient
-
-func initClient() (err error) {
-	config, err := k8s.NewConfig()
-	if err != nil {
-		return
-	}
-	client, err = kiali.NewClientFromConfig(config)
-	return
+// Probe describes a LLDP probe that does nothing
+type Probe struct {
 }
 
-func getClient() *kiali.IstioClient {
-	if client == nil {
-		panic("client was not initialized, aborting!")
-	}
-	return client
+// Start the probe
+func (p *Probe) Start() {
+}
+
+// Stop the probe
+func (p *Probe) Stop() {
+}
+
+// NewProbe returns a LLDP probe that does nothing
+func NewProbe(g *graph.Graph, hostNode *graph.Node, interfaces []string) (*Probe, error) {
+	return nil, common.ErrNotImplemented
 }

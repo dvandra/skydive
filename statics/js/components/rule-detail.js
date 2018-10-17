@@ -390,9 +390,9 @@ var BridgeLayout = (function () {
     if (p === LOCAL_PORT) return 'LOCAL';
     if (p === SAME_PORT || p === undefined) return '';
     var nodes = this.interfaces[p];
-    if (nodes === undefined) return p;
+    if (nodes === undefined) return '???';
     var port = nodes[1];
-    var portname = (port === undefined) ? '' : port.metadata.Name;
+    var portname = (port === undefined) ? '???' : port.metadata.Name;
     return portname;
   };
 
