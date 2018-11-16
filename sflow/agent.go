@@ -103,6 +103,11 @@ func (sfa *Agent) feedFlowTable() {
 				// records each generating Packets.
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
+			for _, sample := range sflowPacket.CounterSamples {
+				// iterate over a set of Packets as a sample contains multiple  -- added test by Darshan
+				// records each generating Packets.
+				sfa.FlowTable.FeedWithCounterSample(&sample, bpf)
+			}
 		}
 	}
 }
