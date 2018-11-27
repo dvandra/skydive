@@ -491,13 +491,6 @@ func (ft *Table) FeedWithSFlowSample(sample *layers.SFlowFlowSample, bpf *BPF) {
 	}
 }
 
-// FeedWithCounterSample feeds the table with Counter samples  -- added test by Darshan
-func (ft *Table) FeedWithCounterSample(sample *layers.SFlowCounterSample, bpf *BPF) {
-	for _, ps := range PacketSeqFromSFlowSample(sample, bpf, ft.ipDefragger) {
-		ft.packetSeqChan <- ps
-	}
-}
-
 // Start the flow table
 func (ft *Table) Start() (chan *PacketSequence, chan *Flow) {
 	go ft.Run()

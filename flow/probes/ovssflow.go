@@ -56,6 +56,7 @@ type OvsSFlowProbesHandler struct {
 	probes       map[string]OvsSFlowProbe
 	probesLock   common.RWMutex
 	Graph        *graph.Graph
+	Node         *graph.Node
 	fpta         *FlowProbeTableAllocator
 	ovsClient    *ovsdb.OvsClient
 	allocator    *sflow.AgentAllocator
@@ -202,7 +203,7 @@ func (o *OvsSFlowProbesHandler) RegisterProbeOnBridge(bridgeUUID string, tid str
 	}
 
 	addr := common.ServiceAddress{Addr: address, Port: 0}
-	agent, err := o.allocator.Alloc(bridgeUUID, probe.flowTable, capture.BPFFilter, headerSize, &addr)
+	agent, err := o.allocator.Alloc(bridgeUUID, probe.flowTable, capture.BPFFilter, headerSize, &addr, o.Node, o.Graph)
 	if err != nil && err != sflow.ErrAgentAlreadyAllocated {
 		return err
 	}
