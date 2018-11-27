@@ -104,6 +104,9 @@ func (sfa *Agent) feedFlowTable() {
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
 		}
+		counter :=sflowPacket.CounterSamples  
+
+		
 	}
 }
 
