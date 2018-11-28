@@ -179,7 +179,7 @@ func (o *OvsSFlowProbesHandler) UnregisterSFlowProbeFromBridge(bridgeUUID string
 }
 
 // RegisterProbeOnBridge registers a new probe on the OVS bridge
-func (o *OvsSFlowProbesHandler) RegisterProbeOnBridge(bridgeUUID string, tid string, capture *types.Capture) error {
+func (o *OvsSFlowProbesHandler) RegisterProbeOnBridge(bridgeUUID string, tid string, capture *types.Capture, n *graph.Node) error {
 	headerSize := flow.DefaultCaptureLength
 	if capture.HeaderSize != 0 {
 		headerSize = uint32(capture.HeaderSize)
@@ -232,7 +232,7 @@ func (o *OvsSFlowProbesHandler) registerProbe(n *graph.Node, capture *types.Capt
 
 	if isOvsBridge(n) {
 		if uuid, _ := n.GetFieldString("UUID"); uuid != "" {
-			if err := o.RegisterProbeOnBridge(uuid, tid, capture); err != nil {
+			if err := o.RegisterProbeOnBridge(uuid, tid, capture, n); err != nil {
 				return err
 			}
 			go e.OnStarted()
@@ -243,6 +243,7 @@ func (o *OvsSFlowProbesHandler) registerProbe(n *graph.Node, capture *types.Capt
 
 // RegisterProbe registers a probe on a graph node
 func (o *OvsSFlowProbesHandler) RegisterProbe(n *graph.Node, capture *types.Capture, e FlowProbeEventHandler) error {
+	o.Node = n
 	err := o.registerProbe(n, capture, e)
 	if err != nil {
 		go e.OnError(err)

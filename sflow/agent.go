@@ -94,12 +94,17 @@ func (sfa *Agent) feedFlowTable() {
 		p := gopacket.NewPacket(buf[:n], layers.LayerTypeSFlow, gopacket.DecodeOptions{NoCopy: true})
 		sflowLayer := p.Layer(layers.LayerTypeSFlow)
 		sflowPacket, ok := sflowLayer.(*layers.SFlowDatagram)
+		logging.GetLogger().Infof("Value of p = %s", p)
+		logging.GetLogger().Infof("%d sample captured", sflowPacket.SampleCount)
 		if !ok {
 			logging.GetLogger().Errorf("Unable to decode sFlow packet: %s", p)
 			continue
 		}
-
 		if sflowPacket.SampleCount > 0 {
+			sfa.Graph.Lock()
+			defer sfa.Graph.Unlock()
+			logging.GetLogger().Infof("Node = %s", sfa.Node)
+			sfa.Graph.AddMetadata(sfa.Node, "Sflow-SampleCount:", sflowPacket.SampleCount)
 			logging.GetLogger().Debugf("%d sample captured", sflowPacket.SampleCount)
 			for _, sample := range sflowPacket.FlowSamples {
 				// iterate over a set of Packets as a sample contains multiple
@@ -116,7 +121,7 @@ func (sfa *Agent) feedFlowTable() {
 			if len(counters) > 0 {
 				sfa.Graph.Lock()
 				defer sfa.Graph.Unlock()
-				sfa.Graph.AddMetadata(n, "Sflow-Counters", counters)
+				sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
 			}
 			//graph.Metadata = append(graph.Metadata, counters)
 			//	logging.GetLogger().Infof("counters <- Sample = %s", sample)
@@ -222,6 +227,7 @@ func (a *AgentAllocator) ReleaseAll() {
 func (a *AgentAllocator) Alloc(uuid string, ft *flow.Table, bpfFilter string, headerSize uint32, addr *common.ServiceAddress, n *graph.Node, Graph *graph.Graph) (agent *Agent, _ error) {
 	a.Lock()
 	defer a.Unlock()
+	logging.GetLogger().Infof("Node = %s", n)
 
 	// check if there is an already allocated agent for this uuid
 	for _, agent := range a.agents {
@@ -229,6 +235,7 @@ func (a *AgentAllocator) Alloc(uuid string, ft *flow.Table, bpfFilter string, he
 			return agent, ErrAgentAlreadyAllocated
 		}
 	}
+	logging.GetLogger().Infof("Node = %s", n)
 
 	// get port, if port is not given by user.
 	var err error
@@ -237,6 +244,7 @@ func (a *AgentAllocator) Alloc(uuid string, ft *flow.Table, bpfFilter string, he
 			return nil, errors.New("failed to allocate sflow port: " + err.Error())
 		}
 	}
+	logging.GetLogger().Infof("Node = %s", n)
 	s := NewAgent(uuid, addr, ft, bpfFilter, headerSize, n, Graph)
 
 	a.agents = append(a.agents, s)
