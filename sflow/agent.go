@@ -95,7 +95,7 @@ func (sfa *Agent) feedFlowTable() {
 		sflowLayer := p.Layer(layers.LayerTypeSFlow)
 		sflowPacket, ok := sflowLayer.(*layers.SFlowDatagram)
 		logging.GetLogger().Infof("Value of p = %s", p)
-		logging.GetLogger().Infof("%d sample captured", sflowPacket.SampleCount)
+		//logging.GetLogger().Infof("%d sample captured", sflowPacket.SampleCount)
 		if !ok {
 			logging.GetLogger().Errorf("Unable to decode sFlow packet: %s", p)
 			continue
@@ -106,9 +106,9 @@ func (sfa *Agent) feedFlowTable() {
 			logging.GetLogger().Infof("Node = %s", sfa.Node)
 			sfa.Graph.AddMetadata(sfa.Node, "Sflow-SampleCount:", sflowPacket.SampleCount)
 			logging.GetLogger().Debugf("%d sample captured", sflowPacket.SampleCount)
+			logging.GetLogger().Infof("%d sample captured", sflowPacket.SampleCount)
 			for _, sample := range sflowPacket.FlowSamples {
-				// iterate over a set of Packets as a sample contains multiple
-				// records each generating Packets.
+				// iterate over a set of Packets as a sample contains multiple records each generating Packets.
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
 			var counters []layers.SFlowCounterSample
@@ -118,11 +118,12 @@ func (sfa *Agent) feedFlowTable() {
 				counters = append(counters, sample)
 			}
 			logging.GetLogger().Infof("counters= %v", counters)
-			if len(counters) > 0 {
-				sfa.Graph.Lock()
-				defer sfa.Graph.Unlock()
-				sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
-			}
+			sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
+			//if len(counters) > 0 {
+				//sfa.Graph.Lock()
+				//defer sfa.Graph.Unlock()
+				//sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
+			//}
 			//graph.Metadata = append(graph.Metadata, counters)
 			//	logging.GetLogger().Infof("counters <- Sample = %s", sample)
 			//	counters = append(counters, sample)
@@ -132,7 +133,6 @@ func (sfa *Agent) feedFlowTable() {
 			//logging.GetLogger().Infof("Metadata", sfa.GraphNode.Metadata)
 			// iterate over a set of Packets as a sample contains multiple  -- added test by Darshan
 			// records each generating Packets.
-
 		}
 	}
 }
