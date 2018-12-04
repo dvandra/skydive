@@ -115,8 +115,6 @@ func (sfa *Agent) feedFlowTable() {
 				counters = append(counters, sample)
 			}
 			logging.GetLogger().Infof("counters= %v", counters)
-			sfa.Graph.Lock()
-			defer sfa.Graph.Unlock()
 			sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
 		}
 
