@@ -58,7 +58,7 @@ type Agent struct {
 	BPFFilter  string
 	HeaderSize uint32
 	Graph      *graph.Graph
-	Node 	   *graph.Node
+	Node       *graph.Node
 }
 
 // AgentAllocator describes an SFlow agent allocator to manage multiple SFlow agent probe
@@ -92,10 +92,10 @@ func (sfa *Agent) feedFlowTable() {
 
 		// TODO use gopacket.NoCopy ? instead of gopacket.Default
 		p := gopacket.NewPacket(buf[:n], layers.LayerTypeSFlow, gopacket.DecodeOptions{NoCopy: true})
-		logging.GetLogger().Infof("value of gopacket %s",p)
+		logging.GetLogger().Infof("value of gopacket %s", p)
 		sflowLayer := p.Layer(layers.LayerTypeSFlow)
 		sflowPacket, ok := sflowLayer.(*layers.SFlowDatagram)
-		logging.GetLogger().Infof("value of p %s",p)
+		logging.GetLogger().Infof("value of p %s", p)
 		logging.GetLogger().Infof("%d sample captured", sflowPacket.SampleCount)
 
 		if !ok {
@@ -111,10 +111,12 @@ func (sfa *Agent) feedFlowTable() {
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
 			var counters []layers.SFlowCounterSample
-			for _,sample := range sflowPacket.CounterSamples{
+			for _, sample := range sflowPacket.CounterSamples {
 				counters = append(counters, sample)
 			}
 			logging.GetLogger().Infof("counters= %v", counters)
+			sfa.Graph.Lock()
+			sfa.Graph.Unlock()
 			sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
 		}
 
