@@ -116,8 +116,8 @@ func (sfa *Agent) feedFlowTable() {
 			}
 			logging.GetLogger().Infof("counters= %v", counters)
 			sfa.Graph.Lock()
-			sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
 			sfa.Graph.Unlock()
+			sfa.Graph.AddMetadata(sfa.Node, "Sflow-Counters", counters)
 		}
 
 	}
@@ -153,7 +153,6 @@ func (sfa *Agent) Start() {
 
 // Stop the SFlow probe agent
 func (sfa *Agent) Stop() {
-
 	sfa.Lock()
 	defer sfa.Unlock()
 
