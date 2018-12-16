@@ -396,6 +396,7 @@ func (o *Probe) OnOvsInterfaceAdd(monitor *ovsdb.OvsMonitor, uuid string, row *l
 		now := time.Now()
 
 		statistics := field.(libovsdb.OvsMap)
+		logging.GetLogger().Infof("Statistics : ", statistics)
 		currMetric := newInterfaceMetricsFromOVSDB(statistics)
 		currMetric.Last = int64(common.UnixMillis(now))
 
