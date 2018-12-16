@@ -24,7 +24,6 @@ package sflow
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -122,15 +121,15 @@ func (sfa *Agent) feedFlowTable() {
 				counters = append(counters, sample)
 				var records []layers.SFlowRecord
 				//var format layers.SFlowCounterRecordType
-				var i uint32
+				//var i uint32
 				//var rec [][]StructField
 				//var record []StructField
 
 				records = sample.GetRecords()
 
-				for i < sample.RecordCount {
-					record := records[i]
-					fmt.Println(record)
+				for _, record := range records{
+					//record := records[i]
+					//fmt.Println(record)
 					//var record = rec[i]
 					//t := record.(struct)
 					//var rec t
