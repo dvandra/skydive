@@ -27,6 +27,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time" //changes
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -35,6 +36,7 @@ import (
 	"github.com/skydive-project/skydive/config"
 	"github.com/skydive-project/skydive/flow"
 	"github.com/skydive-project/skydive/logging"
+	"github.com/skydive-project/skydive/topology" //changes
 	"github.com/skydive-project/skydive/topology/graph"
 )
 
@@ -113,6 +115,67 @@ func (sfa *Agent) feedFlowTable() {
 			var counters []layers.SFlowCounterSample
 			for _, sample := range sflowPacket.CounterSamples {
 				counters = append(counters, sample)
+				//adding changes
+				var records []layers.SFlowRecord
+				//var i uint32
+				records = sample.GetRecords()
+
+				//for i < sample.RecordCount {
+				//record := records[i]
+				//fmt.Println(record)
+				for _, record := range records {
+					t := record.(interface{})
+
+					switch t.(type) {
+					case layers.SFlowGenericInterfaceCounters:
+						var gen layers.SFlowGenericInterfaceCounters
+						gen = t.(layers.SFlowGenericInterfaceCounters)
+						tr := sfa.Graph.StartMetadataTransaction(sfa.Node)
+						defer tr.Commit()
+						//setInt64 := func(k ) int64 {
+						//	if v, ok := gen.k; ok {
+						//		return int64(v.(float64))
+						//	}
+						//	return 0
+						//}
+						newInterfaceMetricsFromOVSSFlow := func(gen layers.SFlowGenericInterfaceCounters) *topology.InterfaceMetric {
+							return &topology.InterfaceMetric{
+								Multicast: int64(gen.IfInMulticastPkts),
+								//Collisions:    setInt64(collisions),
+								//RxBytes:       setInt64(rx_bytes),
+								//RxCrcErrors:   setInt64(IfOutErrors),
+								RxDropped: int64(gen.IfInDiscards),
+								RxErrors:  int64(gen.IfInErrors),
+								//RxFrameErrors: setInt64(rx_frame_err),
+								//RxOverErrors:  setInt64(rx_over_err),
+								RxPackets: int64(int64(gen.IfInUcastPkts) + int64(gen.IfInMulticastPkts) + int64(gen.IfInBroadcastPkts)),
+								//TxBytes:   setInt64(tx_bytes),
+								TxDropped: int64(gen.IfOutDiscards),
+								TxErrors:  int64(gen.IfOutErrors),
+								TxPackets: int64(int64(gen.IfOutUcastPkts) + int64(gen.IfOutMulticastPkts) + int64(gen.IfOutBroadcastPkts)),
+							}
+						}
+						currMetric := newInterfaceMetricsFromOVSSFlow(gen)
+						logging.GetLogger().Infof("currMetric= %v", currMetric)
+						now := time.Now()
+						currMetric.Last = int64(common.UnixMillis(now))
+						var prevMetric, lastUpdateMetric *topology.InterfaceMetric
+
+						if ovs, err := sfa.Node.GetField("Ovs"); err == nil {
+							prevMetric, ok = ovs.(map[string]interface{})["SFlowMetric"].(*topology.InterfaceMetric)
+							if ok {
+								lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.InterfaceMetric)
+							}
+						}
+						tr.AddMetadata("Ovs.SFlowMetric", currMetric)
+						// nothing changed since last update
+						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
+							lastUpdateMetric.Start = prevMetric.Last
+							lastUpdateMetric.Last = int64(common.UnixMillis(now))
+							tr.AddMetadata("Ovs.SFlowLastUpdateMetric", lastUpdateMetric)
+						}
+					}
+				}
 			}
 			logging.GetLogger().Infof("counters= %v", counters)
 			sfa.Graph.Lock()
