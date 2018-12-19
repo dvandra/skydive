@@ -127,22 +127,15 @@ func (sfa *Agent) feedFlowTable() {
 						newInterfaceMetricsFromOVSSFlow := func(gen layers.SFlowGenericInterfaceCounters) *topology.InterfaceMetric {
 							return &topology.InterfaceMetric{
 								Multicast: int64(gen.IfInMulticastPkts),
-								//Collisions:    setInt64(collisions),
-								//RxBytes:       setInt64(rx_bytes),
-								//RxCrcErrors:   setInt64(IfOutErrors),
 								RxDropped: int64(gen.IfInDiscards),
 								RxErrors:  int64(gen.IfInErrors),
-								//RxFrameErrors: setInt64(rx_frame_err),
-								//RxOverErrors:  setInt64(rx_over_err),
-								RxPackets: int64(int64(gen.IfInUcastPkts) + int64(gen.IfInMulticastPkts) + int64(gen.IfInBroadcastPkts)),
-								//TxBytes:   setInt64(tx_bytes),
+								RxPackets: int64(uint32(gen.IfInUcastPkts) + uint32(gen.IfInMulticastPkts) + uint32(gen.IfInBroadcastPkts)),
 								TxDropped: int64(gen.IfOutDiscards),
 								TxErrors:  int64(gen.IfOutErrors),
-								TxPackets: int64(int64(gen.IfOutUcastPkts) + int64(gen.IfOutMulticastPkts) + int64(gen.IfOutBroadcastPkts)),
+								TxPackets: int64(uint32(gen.IfOutUcastPkts) + uint32(gen.IfOutMulticastPkts) + uint32(gen.IfOutBroadcastPkts)),
 							}
 						}
 						currMetric := newInterfaceMetricsFromOVSSFlow(gen)
-						logging.GetLogger().Infof("currMetric= %v", currMetric) //just for testing
 						now := time.Now()
 						currMetric.Last = int64(common.UnixMillis(now))
 						var prevMetric, lastUpdateMetric *topology.InterfaceMetric
