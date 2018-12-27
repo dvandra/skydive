@@ -58,17 +58,37 @@ nodeloop:
 		}
 
 		m, _ := n.GetField("LastUpdateMetric")
-		if m == nil {
-			continue
-		}
+		if m != nil {
+			lastMetric, ok := m.(*topology.InterfaceMetric)
+			if !ok {
+				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			}
 
-		lastMetric, ok := m.(*topology.InterfaceMetric)
-		if !ok {
-			return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
+				metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
+			}
 		}
+		sf, _ := n.GetField("SFlow.LastUpdatedMetric")
+		if sf != nil {
+			sflastMetric, ok := sf.(*topology.InterfaceMetric)
+			if !ok {
+				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			}
 
-		if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
-			metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
+			if gslice == nil || (sflastMetric.Start > gslice.Start && sflastMetric.Last < gslice.Last) && it.Next() {
+				metrics[string(n.ID)] = append(metrics[string(n.ID)], sflastMetric)
+			}
+		}
+		ovsm, _ := n.GetField("Ovs.LastUpdatedMetric")
+		if ovsm != nil {
+			ovslastMetric, ok := m.(*topology.InterfaceMetric)
+			if !ok {
+				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			}
+
+			if gslice == nil || (ovslastMetric.Start > gslice.Start && ovslastMetric.Last < gslice.Last) && it.Next() {
+				metrics[string(n.ID)] = append(metrics[string(n.ID)], ovslastMetric)
+			}
 		}
 	}
 
