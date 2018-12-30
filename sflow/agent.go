@@ -123,14 +123,26 @@ func (sfa *Agent) feedFlowTable() {
 						var gen layers.SFlowGenericInterfaceCounters
 						gen = t.(layers.SFlowGenericInterfaceCounters)
 						tr := sfa.Graph.StartMetadataTransaction(sfa.Node)
-						currMetric := &topology.InterfaceMetric{
-							Multicast: int64(gen.IfInMulticastPkts),
-							RxDropped: int64(gen.IfInDiscards),
-							RxErrors:  int64(gen.IfInErrors),
-							RxPackets: int64(uint32(gen.IfInUcastPkts) + uint32(gen.IfInMulticastPkts) + uint32(gen.IfInBroadcastPkts)),
-							TxDropped: int64(gen.IfOutDiscards),
-							TxErrors:  int64(gen.IfOutErrors),
-							TxPackets: int64(uint32(gen.IfOutUcastPkts) + uint32(gen.IfOutMulticastPkts) + uint32(gen.IfOutBroadcastPkts)),
+						currMetric := &topology.SFlowMetric{
+							IfIndex:            gen.IfIndex ,
+							IfType:             gen.IfType ,
+							IfSpeed:            gen.IfSpeed ,
+							IfDirection:        gen.IfDirection ,
+							IfStatus:           gen.IfStatus ,
+							IfInOctets:         gen.IfInOctets ,
+							IfInUcastPkts:      gen.IfInUcastPkts ,
+							IfInMulticastPkts:  gen.IfInMulticastPkts ,
+							IfInBroadcastPkts:  gen.IfInBroadcastPkts ,
+							IfInDiscards:       gen.IfInDiscards ,
+							IfInErrors:         gen.IfInErrors ,
+							IfInUnknownProtos:  gen.IfInUnknownProtos ,
+							IfOutOctets:        gen.IfOutOctets ,
+							IfOutUcastPkts:     gen.IfOutUcastPkts ,
+							IfOutMulticastPkts: gen.IfOutMulticastPkts ,
+							IfOutBroadcastPkts: gen.IfOutBroadcastPkts ,
+							IfOutDiscards:      gen.IfOutDiscards ,
+							IfOutErrors:        gen.IfOutErrors ,
+							IfPromiscuousMode:  gen.IfPromiscuousMode ,
 						}
 						now := time.Now()
 						currMetric.Last = int64(common.UnixMillis(now))
