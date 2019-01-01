@@ -31,27 +31,27 @@ import (
 // InterfaceMetric the interface packets counters
 // easyjson:json
 type SFlowMetric struct {
-	Start			   uint64 `json:"Start,omitempty"`
-	Last               uint64 `json:"Last,omitempty"`
-	IfIndex            uint64 `json:"IfIndex,omitempty"`
-	IfType             uint64 `json:"IfType,omitempty"`
-	IfSpeed            uint64 `json:"IfSpeed,omitempty"`
-	IfDirection        uint64 `json:"IfDirection,omitempty"`
-	IfStatus           uint64 `json:"IfStatus,omitempty"`
-	IfInOctets         uint64 `json:"IfInOctets,omitempty"`
-	IfInUcastPkts      uint64 `json:"IfInUcastPkts,omitempty"`
-	IfInMulticastPkts  uint64 `json:"IfInMulticastPkts,omitempty"`
-	IfInBroadcastPkts  uint64 `json:"IfInBroadcastPkts,omitempty"`
-	IfInDiscards       uint64 `json:"IfInDiscards,omitempty"`
-	IfInErrors         uint64 `json:"IfInErrors,omitempty"`
-	IfInUnknownProtos  uint64 `json:"IfInUnknownProtos,omitempty"`
-	IfOutOctets        uint64 `json:"IfOutOctets,omitempty"`
-	IfOutUcastPkts     uint64 `json:"IfOutUcastPkts,omitempty"`
-	IfOutMulticastPkts uint64 `json:"IfOutMulticastPkts,omitempty"`
-	IfOutBroadcastPkts uint64 `json:"IfOutBroadcastPkts,omitempty"`
-	IfOutDiscards      uint64 `json:"IfOutDiscards,omitempty"`
-	IfOutErrors        uint64 `json:"IfOutErrors,omitempty"`
-	IfPromiscuousMode  uint64 `json:"IfPromiscuousMode,omitempty"`
+	Start			   int64 `json:"Start,omitempty"`
+	Last               int64 `json:"Last,omitempty"`
+	IfIndex            int64 `json:"IfIndex,omitempty"`
+	IfType             int64 `json:"IfType,omitempty"`
+	IfSpeed            int64 `json:"IfSpeed,omitempty"`
+	IfDirection        int64 `json:"IfDirection,omitempty"`
+	IfStatus           int64 `json:"IfStatus,omitempty"`
+	IfInOctets         int64 `json:"IfInOctets,omitempty"`
+	IfInUcastPkts      int64 `json:"IfInUcastPkts,omitempty"`
+	IfInMulticastPkts  int64 `json:"IfInMulticastPkts,omitempty"`
+	IfInBroadcastPkts  int64 `json:"IfInBroadcastPkts,omitempty"`
+	IfInDiscards       int64 `json:"IfInDiscards,omitempty"`
+	IfInErrors         int64 `json:"IfInErrors,omitempty"`
+	IfInUnknownProtos  int64 `json:"IfInUnknownProtos,omitempty"`
+	IfOutOctets        int64 `json:"IfOutOctets,omitempty"`
+	IfOutUcastPkts     int64 `json:"IfOutUcastPkts,omitempty"`
+	IfOutMulticastPkts int64 `json:"IfOutMulticastPkts,omitempty"`
+	IfOutBroadcastPkts int64 `json:"IfOutBroadcastPkts,omitempty"`
+	IfOutDiscards      int64 `json:"IfOutDiscards,omitempty"`
+	IfOutErrors        int64 `json:"IfOutErrors,omitempty"`
+	IfPromiscuousMode  int64 `json:"IfPromiscuousMode,omitempty"`
 }
 
 // SFlowMetricMetadataDecoder implements a json message raw decoder
@@ -65,27 +65,27 @@ func SFlowMetricMetadataDecoder(raw json.RawMessage) (common.Getter, error) {
 }
 
 // GetStart returns start time
-func (im *SFlowMetric) GetStart() uint64 {
+func (im *SFlowMetric) GetStart() int64 {
 	return im.Start
 }
 
 // SetStart set start time
-func (im *SFlowMetric) SetStart(start uint64) {
+func (im *SFlowMetric) SetStart(start int64) {
 	im.Start = start
 }
 
 // GetLast returns last time
-func (im *SFlowMetric) GetLast() uint64 {
+func (im *SFlowMetric) GetLast() int64 {
 	return im.Last
 }
 
 // SetLast set last tome
-func (im *SFlowMetric) SetLast(last uint64) {
+func (im *SFlowMetric) SetLast(last int64) {
 	im.Last = last
 }
 
 // GetFieldUint64 implements Getter and SFlowMetrics interfaces
-func (im *SFlowMetric) GetFieldUint64(field string) (uint64, error) {
+func (im *SFlowMetric) GetFieldInt64(field string) (int64, error) {
 	switch field {
 	case "Start":
 		return im.Start, nil
@@ -136,7 +136,7 @@ func (im *SFlowMetric) GetFieldUint64(field string) (uint64, error) {
 
 // GetField implements Getter interface
 func (im *SFlowMetric) GetField(key string) (interface{}, error) {
-	return im.GetFieldUint64(key)
+	return im.GetFieldInt64(key)
 }
 
 // GetFieldString implements Getter interface
@@ -230,30 +230,30 @@ func (im *SFlowMetric) applyRatio(ratio float64) *SFlowMetric {
 	return &SFlowMetric{
 		Start:			    im.Start, 
 		Last:               im.Last,
-		IfIndex:            uint64(float64(im.IfIndex) * ratio),
-		IfType:             uint64(float64(im.IfType) * ratio),
-		IfSpeed:            uint64(float64(im.IfSpeed) * ratio),
-		IfDirection:        uint64(float64(im.IfDirection) * ratio),
-		IfStatus:           uint64(float64(im.IfStatus) * ratio),
-		IfInOctets:         uint64(float64(im.IfInOctets) * ratio),
-		IfInUcastPkts:      uint64(float64(im.IfInUcastPkts) * ratio),
-		IfInMulticastPkts:  uint64(float64(im.IfInMulticastPkts) * ratio),
-		IfInBroadcastPkts:  uint64(float64(im.IfInBroadcastPkts) * ratio),
-		IfInDiscards:       uint64(float64(im.IfInDiscards) * ratio),
-		IfInErrors:         uint64(float64(im.IfInErrors) * ratio),
-		IfInUnknownProtos:  uint64(float64(im.IfInUnknownProtos) * ratio),
-		IfOutOctets:        uint64(float64(im.IfOutOctets) * ratio),
-		IfOutUcastPkts:     uint64(float64(im.IfOutUcastPkts) * ratio),
-		IfOutMulticastPkts: uint64(float64(im.IfOutMulticastPkts) * ratio),
-		IfOutBroadcastPkts: uint64(float64(im.IfOutBroadcastPkts) * ratio),
-		IfOutDiscards:      uint64(float64(im.IfOutDiscards) * ratio),
-		IfOutErrors:        uint64(float64(im.IfOutErrors) * ratio),
-		IfPromiscuousMode:  uint64(float64(im.IfPromiscuousMode) * ratio),
+		IfIndex:            int64(float64(im.IfIndex) * ratio),
+		IfType:             int64(float64(im.IfType) * ratio),
+		IfSpeed:            int64(float64(im.IfSpeed) * ratio),
+		IfDirection:        int64(float64(im.IfDirection) * ratio),
+		IfStatus:           int64(float64(im.IfStatus) * ratio),
+		IfInOctets:         int64(float64(im.IfInOctets) * ratio),
+		IfInUcastPkts:      int64(float64(im.IfInUcastPkts) * ratio),
+		IfInMulticastPkts:  int64(float64(im.IfInMulticastPkts) * ratio),
+		IfInBroadcastPkts:  int64(float64(im.IfInBroadcastPkts) * ratio),
+		IfInDiscards:       int64(float64(im.IfInDiscards) * ratio),
+		IfInErrors:         int64(float64(im.IfInErrors) * ratio),
+		IfInUnknownProtos:  int64(float64(im.IfInUnknownProtos) * ratio),
+		IfOutOctets:        int64(float64(im.IfOutOctets) * ratio),
+		IfOutUcastPkts:     int64(float64(im.IfOutUcastPkts) * ratio),
+		IfOutMulticastPkts: int64(float64(im.IfOutMulticastPkts) * ratio),
+		IfOutBroadcastPkts: int64(float64(im.IfOutBroadcastPkts) * ratio),
+		IfOutDiscards:      int64(float64(im.IfOutDiscards) * ratio),
+		IfOutErrors:        int64(float64(im.IfOutErrors) * ratio),
+		IfPromiscuousMode:  int64(float64(im.IfPromiscuousMode) * ratio),
 	}
 }
 
 // Split splits a metric into two parts
-func (im *SFlowMetric) Split(cut uint64) (common.SFlowMetric, common.SFlowMetric) {
+func (im *SFlowMetric) Split(cut int64) (common.SFlowMetric, common.SFlowMetric) {
 	if cut < im.Start {
 		return nil, im
 	} else if cut > im.Last {

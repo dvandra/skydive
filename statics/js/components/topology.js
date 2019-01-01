@@ -229,11 +229,11 @@ var TopologyComponent = {
         <panel id="ovs-sflow-metric" v-if="currentNodeSFlowMetric"\
                 title="OVS SFlow Metrics">\
           <h2>Total metrics</h2>\
-          <metrics-table :object="currentNodeSFlowMetric" :keys="globalVars[\'interface-metric-keys\']"></metrics-table>\
+          <sflow-metrics-table :object="currentNodeSFlowMetric" :keys="globalVars[\'sflow-metric-keys\']"></sflow-metrics-table>\
           <div v-show="currentNodeSFlowLastUpdateMetric && topologyTimeContext === 0">\
             <h2>Last metrics</h2>\
-            <metrics-table :object="currentNodeSFlowLastUpdateMetric" :keys="globalVars[\'interface-metric-keys\']" \
-              :defaultKeys="[\'Last\', \'Start\', \'RxBytes\', \'RxPackets\', \'TxBytes\', \'TxPackets\']"></metrics-table>\
+            <sflow-metrics-table :object="currentNodeSFlowLastUpdateMetric" :keys="globalVars[\'sflow-metric-keys\']" \
+              :defaultKeys="[\'Last\', \'IfInUcastPkts\', \'IfOutUcastPkts\', \'IfInMulticastPkts\', \'IfOutUcastPkts\', \'IfInDiscards\', \'IfOutDiscards\', \'IfInErrors\', \'IfOutErrors\']"></sflow-metrics-table>\
           </div>\
         </panel>\
         <panel id="routing-tabel" v-if="currentNodeMetadata && currentNode.metadata.RoutingTables"\

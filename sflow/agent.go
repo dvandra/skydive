@@ -123,35 +123,41 @@ func (sfa *Agent) feedFlowTable() {
 						var gen layers.SFlowGenericInterfaceCounters
 						gen = t.(layers.SFlowGenericInterfaceCounters)
 						tr := sfa.Graph.StartMetadataTransaction(sfa.Node)
+						Uint64ToInt64 := func(key uint64) int64{
+							return int64(float64(key))
+						}
+						Uint32ToInt64 := func(key uint32) int64{
+							return int64(float64(key))
+						}
 						currMetric := &topology.SFlowMetric{
-							IfIndex:            gen.IfIndex ,
-							IfType:             gen.IfType ,
-							IfSpeed:            gen.IfSpeed ,
-							IfDirection:        gen.IfDirection ,
-							IfStatus:           gen.IfStatus ,
-							IfInOctets:         gen.IfInOctets ,
-							IfInUcastPkts:      gen.IfInUcastPkts ,
-							IfInMulticastPkts:  gen.IfInMulticastPkts ,
-							IfInBroadcastPkts:  gen.IfInBroadcastPkts ,
-							IfInDiscards:       gen.IfInDiscards ,
-							IfInErrors:         gen.IfInErrors ,
-							IfInUnknownProtos:  gen.IfInUnknownProtos ,
-							IfOutOctets:        gen.IfOutOctets ,
-							IfOutUcastPkts:     gen.IfOutUcastPkts ,
-							IfOutMulticastPkts: gen.IfOutMulticastPkts ,
-							IfOutBroadcastPkts: gen.IfOutBroadcastPkts ,
-							IfOutDiscards:      gen.IfOutDiscards ,
-							IfOutErrors:        gen.IfOutErrors ,
-							IfPromiscuousMode:  gen.IfPromiscuousMode ,
+							IfIndex:            Uint32ToInt64(gen.IfIndex),
+							IfType:             Uint32ToInt64(gen.IfType),
+							IfSpeed:            Uint64ToInt64(gen.IfSpeed),
+							IfDirection:        Uint32ToInt64(gen.IfDirection),
+							IfStatus:           Uint32ToInt64(gen.IfStatus),
+							IfInOctets:         Uint64ToInt64(gen.IfInOctets),
+							IfInUcastPkts:      Uint32ToInt64(gen.IfInUcastPkts),
+							IfInMulticastPkts:  Uint32ToInt64(gen.IfInMulticastPkts),
+							IfInBroadcastPkts:  Uint32ToInt64(gen.IfInBroadcastPkts),
+							IfInDiscards:       Uint32ToInt64(gen.IfInDiscards),
+							IfInErrors:         Uint32ToInt64(gen.IfInErrors),
+							IfInUnknownProtos:  Uint32ToInt64(gen.IfInUnknownProtos),
+							IfOutOctets:        Uint64ToInt64(gen.IfOutOctets),
+							IfOutUcastPkts:     Uint32ToInt64(gen.IfOutUcastPkts),
+							IfOutMulticastPkts: Uint32ToInt64(gen.IfOutMulticastPkts),
+							IfOutBroadcastPkts: Uint32ToInt64(gen.IfOutBroadcastPkts),
+							IfOutDiscards:      Uint32ToInt64(gen.IfOutDiscards),
+							IfOutErrors:        Uint32ToInt64(gen.IfOutErrors),
+							IfPromiscuousMode:  Uint32ToInt64(gen.IfPromiscuousMode),
 						}
 						now := time.Now()
 						currMetric.Last = int64(common.UnixMillis(now))
 
-						var prevMetric, lastUpdateMetric *topology.InterfaceMetric
+						var prevMetric, lastUpdateMetric *topology.SFlowMetric
 
 						if metric, err := sfa.Node.GetField("SFlow.Metric"); err == nil {
-							prevMetric = metric.(*topology.InterfaceMetric)
-							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.InterfaceMetric)
+							prevMetric = metric.(*topology.SFlowMetric)
+							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.SFlowMetric)
 						}
 						tr.AddMetadata("SFlow.Metric", currMetric)
 

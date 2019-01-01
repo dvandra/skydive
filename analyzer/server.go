@@ -223,6 +223,7 @@ func NewServerFromConfig() (*Server, error) {
 	uiServer.AddGlobalVar("ui", config.Get("ui"))
 	uiServer.AddGlobalVar("flow-metric-keys", (&flow.FlowMetric{}).GetFieldKeys())
 	uiServer.AddGlobalVar("interface-metric-keys", (&topology.InterfaceMetric{}).GetFieldKeys())
+	uiServer.AddGlobalVar("sflow-metric-keys", (&topology.SFlowMetric{}).GetFieldKeys())
 	uiServer.AddGlobalVar("probes", config.Get("analyzer.topology.probes"))
 
 	// add decoders for specific metadata keys, this aims to keep the same
@@ -233,6 +234,8 @@ func NewServerFromConfig() (*Server, error) {
 	graph.NodeMetadataDecoders["Neighbors"] = netlink.NeighborMetadataDecoder
 	graph.NodeMetadataDecoders["Metric"] = topology.InterfaceMetricMetadataDecoder
 	graph.NodeMetadataDecoders["LastUpdateMetric"] = topology.InterfaceMetricMetadataDecoder
+	graph.NodeMetadataDecoders["SFlowMetric"] = topology.SFlowMetricMetadataDecoder
+	graph.NodeMetadataDecoders["SFlowLastUpdateMetric"] = topology.SFlowMetricMetadataDecoder
 
 	persistent, err := newGraphBackendFromConfig(etcdClient)
 	if err != nil {
