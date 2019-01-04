@@ -71,7 +71,6 @@ type Getter interface {
 	GetField(field string) (interface{}, error)
 	GetFieldKeys() []string
 	GetFieldInt64(field string) (int64, error)
-	//GetFieldUint64(field string) (uint64, error)
 	GetFieldString(field string) (string, error)
 }
 
@@ -324,22 +323,6 @@ type Metric interface {
 	Add(m Metric) Metric
 	Sub(m Metric) Metric
 	Split(cut int64) (Metric, Metric)
-	GetStart() int64
-	SetStart(start int64)
-	GetLast() int64
-	SetLast(last int64)
-	IsZero() bool
-}
-
-// SFlowMetric defines a common sflow-Metric interface
-type SFlowMetric interface {
-	// part of the Getter interface
-	GetFieldInt64(field string) (int64, error)
-	GetFieldKeys() []string
-
-	Add(m SFlowMetric) SFlowMetric
-	Sub(m SFlowMetric) SFlowMetric
-	Split(cut int64) (SFlowMetric, SFlowMetric)
 	GetStart() int64
 	SetStart(start int64)
 	GetLast() int64

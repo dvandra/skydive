@@ -96,7 +96,6 @@ func (sfa *Agent) feedFlowTable() {
 		p := gopacket.NewPacket(buf[:n], layers.LayerTypeSFlow, gopacket.DecodeOptions{NoCopy: true})
 		sflowLayer := p.Layer(layers.LayerTypeSFlow)
 		sflowPacket, ok := sflowLayer.(*layers.SFlowDatagram)
-		logging.GetLogger().Debugf("value of p %s", p)
 
 		if !ok {
 			logging.GetLogger().Errorf("Unable to decode sFlow packet: %s", p)
@@ -116,12 +115,9 @@ func (sfa *Agent) feedFlowTable() {
 			for _, sample := range sflowPacket.CounterSamples {
 				records := sample.GetRecords()
 				for _, record := range records {
-					t := record.(interface{})
-
-					switch t.(type) {
+					switch record.(type) {
 					case layers.SFlowGenericInterfaceCounters:
-						var gen layers.SFlowGenericInterfaceCounters
-						gen = t.(layers.SFlowGenericInterfaceCounters)
+						gen := record.(layers.SFlowGenericInterfaceCounters)
 						tr := sfa.Graph.StartMetadataTransaction(sfa.Node)
 						Uint64ToInt64 := func(key uint64) int64{
 							return int64(float64(key))
@@ -155,17 +151,17 @@ func (sfa *Agent) feedFlowTable() {
 
 						var prevMetric, lastUpdateMetric *topology.SFlowMetric
 
-						if metric, err := sfa.Node.GetField("SFlow.Metric"); err == nil {
+						if metric, err := sfa.Node.GetField("Metric"); err == nil {
 							prevMetric = metric.(*topology.SFlowMetric)
 							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.SFlowMetric)
 						}
-						tr.AddMetadata("SFlow.Metric", currMetric)
+						tr.AddMetadata("Metric", currMetric)
 
 						// nothing changed since last update
 						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
 							lastUpdateMetric.Start = prevMetric.Last
 							lastUpdateMetric.Last = int64(common.UnixMillis(now))
-							tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
+							tr.AddMetadata("LastUpdateMetric", lastUpdateMetric)
 						}
 						tr.Commit()
 					}

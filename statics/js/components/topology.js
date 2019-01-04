@@ -226,13 +226,13 @@ var TopologyComponent = {
               :defaultKeys="[\'Last\', \'Start\', \'RxBytes\', \'RxPackets\', \'TxBytes\', \'TxPackets\']"></metrics-table>\
           </div>\
         </panel>\
-        <panel id="ovs-sflow-metric" v-if="currentNodeSFlowMetric"\
+        <panel id="ovs-sflow-metric" v-if="currentNodeMetric"\
                 title="OVS SFlow Metrics">\
           <h2>Total metrics</h2>\
-          <sflow-metrics-table :object="currentNodeSFlowMetric" :keys="globalVars[\'sflow-metric-keys\']"></sflow-metrics-table>\
-          <div v-show="currentNodeSFlowLastUpdateMetric && topologyTimeContext === 0">\
+          <sflow-metrics-table :object="currentNodeMetric" :keys="globalVars[\'sflow-metric-keys\']"></sflow-metrics-table>\
+          <div v-show="currentNodeLastUpdateMetric && topologyTimeContext === 0">\
             <h2>Last metrics</h2>\
-            <sflow-metrics-table :object="currentNodeSFlowLastUpdateMetric" :keys="globalVars[\'sflow-metric-keys\']" \
+            <sflow-metrics-table :object="currentNodeLastUpdateMetric" :keys="globalVars[\'sflow-metric-keys\']" \
               :defaultKeys="[\'Last\', \'IfInUcastPkts\', \'IfOutUcastPkts\', \'IfInMulticastPkts\', \'IfOutUcastPkts\', \'IfInDiscards\', \'IfOutDiscards\', \'IfInErrors\', \'IfOutErrors\']"></sflow-metrics-table>\
           </div>\
         </panel>\
@@ -463,16 +463,6 @@ var TopologyComponent = {
     currentNodeOvsLastUpdateMetric: function() {
       if (!this.currentNodeMetadata || !this.currentNode.metadata.Ovs || !this.currentNode.metadata.Ovs.LastUpdateMetric) return null;
       return this.normalizeMetric(this.currentNode.metadata.Ovs.LastUpdateMetric);
-    },
-
-    currentNodeSFlowMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.Metric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlow.Metric);
-    },
-
-    currentNodeSFlowLastUpdateMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.LastUpdateMetric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlow.LastUpdateMetric);
     },
 
     canReadCaptures: function() {

@@ -145,7 +145,7 @@ func (im *SFlowMetric) GetFieldString(key string) (string, error) {
 }
 
 // Add sum two metrics and return a new SFlowMetrics object
-func (im *SFlowMetric) Add(m common.SFlowMetric) common.SFlowMetric {
+func (im *SFlowMetric) Add(m common.Metric) common.Metric {
 	om := m.(*SFlowMetric)
 
 	return &SFlowMetric{
@@ -174,7 +174,7 @@ func (im *SFlowMetric) Add(m common.SFlowMetric) common.SFlowMetric {
 }
 
 // Sub subtract two metrics and return a new SFlowMetrics object
-func (im *SFlowMetric) Sub(m common.SFlowMetric) common.SFlowMetric {
+func (im *SFlowMetric) Sub(m common.Metric) common.Metric {
 	om := m.(*SFlowMetric)
 
 	return &SFlowMetric{
@@ -253,7 +253,7 @@ func (im *SFlowMetric) applyRatio(ratio float64) *SFlowMetric {
 }
 
 // Split splits a metric into two parts
-func (im *SFlowMetric) Split(cut int64) (common.SFlowMetric, common.SFlowMetric) {
+func (im *SFlowMetric) Split(cut int64) (common.Metric, common.Metric) {
 	if cut < im.Start {
 		return nil, im
 	} else if cut > im.Last {

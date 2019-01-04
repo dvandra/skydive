@@ -40,6 +40,8 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	}
 
 	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
+	//tv = tv.Dedup(ctx, "ID", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlow.LastUpdateMetric.Start")
+	//tv = tv.Dedup(ctx, "ID", "Ovs.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "Ovs.LastUpdateMetric.Start")
 	if tv.Error() != nil {
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
@@ -68,9 +70,9 @@ nodeloop:
 				metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
 			}
 		}
-		/*sf, _ := n.GetField("SFlow.LastUpdatedMetric")
+		sf, _ := n.GetField("SFlow.LastUpdatedMetric")
 		if sf != nil {
-			sflastMetric, ok := sf.(*topology.InterfaceMetric)
+			sflastMetric, ok := sf.(*topology.SFlowMetric)
 			if !ok {
 				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
 			}
@@ -78,10 +80,10 @@ nodeloop:
 			if gslice == nil || (sflastMetric.Start > gslice.Start && sflastMetric.Last < gslice.Last) && it.Next() {
 				metrics[string(n.ID)] = append(metrics[string(n.ID)], sflastMetric)
 			}
-		}*/
+		}
 		ovsm, _ := n.GetField("Ovs.LastUpdatedMetric")
 		if ovsm != nil {
-			ovslastMetric, ok := m.(*topology.InterfaceMetric)
+			ovslastMetric, ok := ovsm.(*topology.InterfaceMetric)
 			if !ok {
 				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
 			}
@@ -91,6 +93,7 @@ nodeloop:
 			}
 		}
 	}
+
 
 	return NewMetricsTraversalStep(tv.GraphTraversal, metrics)
 }
