@@ -160,13 +160,13 @@ func (g *GremlinQueryHelper) GetFlows(query interface{}) ([]*flow.Flow, error) {
 }
 
 // GetInterfaceMetrics from Gremlin query
-func (g *GremlinQueryHelper) GetInterfaceMetrics(query interface{}) (map[string][]*topology.SFlowMetric, error) {
+func (g *GremlinQueryHelper) GetInterfaceMetrics(query interface{}) (map[string][]*topology.InterfaceMetric, error) {
 	data, err := g.Query(query)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []map[string][]*topology.SFlowMetric
+	var result []map[string][]*topology.InterfaceMetric
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, err
 	}

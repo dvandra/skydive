@@ -121,12 +121,14 @@ nodeloop:
 			}
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sfm = %s", string(n.ID))
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sfm = %v", metrics[string(n.ID)])
+
 		}else {
 			if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
 				metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
 			}
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m = %s", string(n.ID))
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m = %v", metrics[string(n.ID)])
+
 		}
 	}
 
