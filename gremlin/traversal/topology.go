@@ -29,6 +29,7 @@ import (
 	"github.com/skydive-project/skydive/common"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/graph/traversal"
+	"github.com/skydive-project/skydive/logging"
 	"github.com/skydive-project/skydive/topology"
 	"github.com/skydive-project/skydive/topology/probes/socketinfo"
 )
@@ -39,36 +40,69 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
 
-	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
+	//var inttv, sftv *traversal.GraphTraversalV
+
+	inttv := tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
+	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
+	logging.GetLogger().Infof("Topology.Interfacemetric.inttv = %v", inttv)
+	sftv := tv.Dedup(ctx, "ID", "SFlowLastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlowLastUpdateMetric.Start")
+	logging.GetLogger().Infof("Topology.Interfacemetric.sftv = %v", sftv)
+
+	allnodes := inttv.GetNodes()
+
+	for _, node := range sftv.GetNodes() {
+		allnodes = append(allnodes, node)
+	}
+
+	logging.GetLogger().Infof("Topology.Interfacemetric.allnodes = %v", allnodes)
+
 	if tv.Error() != nil {
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
 
 	metrics := make(map[string][]common.Metric)
+	logging.GetLogger().Infof("Topology.Interfacemetric.metric = %v", metrics)
 	it := ctx.PaginationRange.Iterator()
 	gslice := tv.GraphTraversal.Graph.GetContext().TimeSlice
+	logging.GetLogger().Infof("Topology.Interfacemetric.gslice = %v", gslice)
 
 	tv.GraphTraversal.RLock()
 	defer tv.GraphTraversal.RUnlock()
 
 nodeloop:
-	for _, n := range tv.GetNodes() {
+	for _, n := range allnodes {
 		if it.Done() {
 			break nodeloop
 		}
 
 		m, _ := n.GetField("LastUpdateMetric")
+		logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m = %v", m)
 		if m == nil {
-			continue
-		}
+			sf, _ := n.GetField("SFlowLastUpdateMetric")
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_ = %v", sf)
+			sflastMetric, ok := sf.(*topology.SFlowMetric)
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_lastm = %v", sflastMetric)
+			if !ok {
+				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			}
 
-		lastMetric, ok := m.(*topology.InterfaceMetric)
-		if !ok {
-			return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
-		}
+			if gslice == nil || (sflastMetric.Start > gslice.Start && sflastMetric.Last < gslice.Last) && it.Next() {
+				metrics[string(n.ID)] = append(metrics[string(n.ID)], sflastMetric)
+			}
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf = %s", string(n.ID))
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf = %v", metrics[string(n.ID)])
+		}else {
+			lastMetric, ok := m.(*topology.InterfaceMetric)
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.interfacelastm = %v", lastMetric)
+			if !ok {
+				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
+			}
 
-		if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
-			metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
+			if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
+				metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
+			}
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m _ string = %s", string(n.ID))
+			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m _ metric = %v", metrics[string(n.ID)])
 		}
 	}
 

@@ -34,6 +34,7 @@ import (
 	"github.com/skydive-project/skydive/common"
 	"github.com/skydive-project/skydive/filters"
 	"github.com/skydive-project/skydive/graffiti/graph"
+	"github.com/skydive-project/skydive/logging"
 )
 
 const (
@@ -903,8 +904,10 @@ func (tv *GraphTraversalV) Dedup(ctx StepContext, s ...interface{}) *GraphTraver
 
 	var keys []string
 	if len(s) > 0 {
+		logging.GetLogger().Infof("Topology.Interfacemetric.Dedup.s = %v", s)
 		for _, key := range s {
 			k, ok := key.(string)
+			logging.GetLogger().Infof("Topology.Interfacemetric.Dedup.s.key = %s", k)
 			if !ok {
 				return &GraphTraversalV{GraphTraversal: tv.GraphTraversal, error: errors.New("Dedup parameters have to be string keys")}
 			}

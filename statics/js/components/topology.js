@@ -466,13 +466,13 @@ var TopologyComponent = {
     },
 
     currentNodeSFlowMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.Metric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlow.Metric);
+        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlowMetric) return null;
+        return this.normalizeMetric(this.currentNode.metadata.SFlowMetric);
     },
 
     currentNodeSFlowLastUpdateMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.LastUpdateMetric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlow.LastUpdateMetric);
+        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlowLastUpdateMetric) return null;
+        return this.normalizeMetric(this.currentNode.metadata.SFlowLastUpdateMetric);
     },
 
     canReadCaptures: function() {

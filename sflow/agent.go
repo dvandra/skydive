@@ -150,17 +150,17 @@ func (sfa *Agent) feedFlowTable() {
 
 						var prevMetric, lastUpdateMetric *topology.SFlowMetric
 
-						if metric, err := sfa.Node.GetField("SFlow.Metric"); err == nil {
+						if metric, err := sfa.Node.GetField("SFlowMetric"); err == nil {
 							prevMetric = metric.(*topology.SFlowMetric)
 							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.SFlowMetric)
 						}
-						tr.AddMetadata("SFlow.Metric", currMetric)
+						tr.AddMetadata("SFlowMetric", currMetric)
 
 						// nothing changed since last update
 						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
 							lastUpdateMetric.Start = prevMetric.Last
 							lastUpdateMetric.Last = int64(common.UnixMillis(now))
-							tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
+							tr.AddMetadata("SFlowLastUpdateMetric", lastUpdateMetric)
 						}
 						tr.Commit()
 					}
