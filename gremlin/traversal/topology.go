@@ -41,20 +41,21 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	}
 
 	//var inttv, sftv *traversal.GraphTraversalV
-
-	inttv := tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
 	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
-	logging.GetLogger().Infof("Topology.Interfacemetric.inttv = %v", inttv)
-	sftv := tv.Dedup(ctx, "ID", "SFlowLastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlowLastUpdateMetric.Start")
-	logging.GetLogger().Infof("Topology.Interfacemetric.sftv = %v", sftv)
 
-	allnodes := inttv.GetNodes()
+	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start", "SFlow.LastUpdateMetric.Start")//.Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
+	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
+	//logging.GetLogger().Infof("Topology.Interfacemetric.inttv = %v", inttv)
+	// := tv.Dedup(ctx, "ID", "SFlowLastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlowLastUpdateMetric.Start")
+	//logging.GetLogger().Infof("Topology.Interfacemetric.sftv = %v", sftv)
 
-	for _, node := range sftv.GetNodes() {
-		allnodes = append(allnodes, node)
-	}
+	//allnodes := inttv.GetNodes()
 
-	logging.GetLogger().Infof("Topology.Interfacemetric.allnodes = %v", allnodes)
+	//for _, node := range sftv.GetNodes() {
+	//	allnodes = append(allnodes, node)
+	//}
+
+	//logging.GetLogger().Infof("Topology.Interfacemetric.allnodes = %v", allnodes)
 
 	if tv.Error() != nil {
 		return NewMetricsTraversalStepFromError(tv.Error())
@@ -70,7 +71,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	defer tv.GraphTraversal.RUnlock()
 
 nodeloop:
-	for _, n := range allnodes {
+	for _, n := range tv.GetNodes() {
 		if it.Done() {
 			break nodeloop
 		}
@@ -78,7 +79,7 @@ nodeloop:
 		m, _ := n.GetField("LastUpdateMetric")
 		logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m = %v", m)
 		if m == nil {
-			sf, _ := n.GetField("SFlowLastUpdateMetric")
+			sf, _ := n.GetField("SFlow.LastUpdateMetric")
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_ = %v", sf)
 			sflastMetric, ok := sf.(*topology.SFlowMetric)
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_lastm = %v", sflastMetric)

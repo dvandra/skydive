@@ -63,6 +63,12 @@ type Agent struct {
 	Node       *graph.Node
 }
 
+//type SFlow struct {
+//	Counters layers.SFlowCounterSample
+//	Metric common.Metric
+//	LastUpdateMetric common.Metric
+//}
+
 // AgentAllocator describes an SFlow agent allocator to manage multiple SFlow agent probe
 type AgentAllocator struct {
 	common.RWMutex
@@ -150,17 +156,17 @@ func (sfa *Agent) feedFlowTable() {
 
 						var prevMetric, lastUpdateMetric *topology.SFlowMetric
 
-						if metric, err := sfa.Node.GetField("SFlowMetric"); err == nil {
+						if metric, err := sfa.Node.GetField("SFlow.Metric"); err == nil {
 							prevMetric = metric.(*topology.SFlowMetric)
 							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.SFlowMetric)
 						}
-						tr.AddMetadata("SFlowMetric", currMetric)
+						tr.AddMetadata("SFlow.Metric", currMetric)
 
 						// nothing changed since last update
 						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
 							lastUpdateMetric.Start = prevMetric.Last
 							lastUpdateMetric.Last = int64(common.UnixMillis(now))
-							tr.AddMetadata("SFlowLastUpdateMetric", lastUpdateMetric)
+							tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
 						}
 						tr.Commit()
 					}
