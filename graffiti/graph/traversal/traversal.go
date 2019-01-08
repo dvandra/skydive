@@ -922,7 +922,6 @@ func (tv *GraphTraversalV) Dedup(ctx StepContext, s ...interface{}) *GraphTraver
 	tv.GraphTraversal.RLock()
 	defer tv.GraphTraversal.RUnlock()
 
-nodeLoop:
 	for _, n := range tv.nodes {
 		if it.Done() {
 			break
@@ -932,15 +931,10 @@ nodeLoop:
 		if len(keys) != 0 {
 			values := make([]interface{}, len(keys))
 			for i, key := range keys {
-				v, err := n.GetField(key)
-				if err != nil {
-					continue nodeLoop
-				}
-				values[i] = v
+				values[i], _ = n.GetField(key)
 			}
 
-			kvisited, err = hashstructure.Hash(values, nil)
-			if err != nil {
+			if kvisited, err = hashstructure.Hash(values, nil); err != nil {
 				skip = true
 			}
 		} else {
