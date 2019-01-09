@@ -148,7 +148,6 @@ func (sfa *Agent) feedFlowTable() {
 						}
 						now := time.Now()
 
-
 						currMetric.Last = int64(common.UnixMillis(now))
 
 						var prevMetric, lastUpdateMetric *SFMetric
@@ -167,14 +166,14 @@ func (sfa *Agent) feedFlowTable() {
 						}
 
 						sfl := &SFlow{
-							Counters: Countersamples,
-							Metric: currMetric,
+							Counters:         Countersamples,
+							Metric:           currMetric,
 							LastUpdateMetric: lastUpdateMetric,
 						}
-
+						sfa.Graph.Lock()
 						tr.AddMetadata("SFlow", sfl)
-
 						tr.Commit()
+						sfa.Graph.Unlock()
 					}
 				}
 			}
@@ -216,6 +215,7 @@ func (sfa *Agent) Stop() {
 	sfa.Lock()
 	defer sfa.Unlock()
 
+	sfa.Graph.DelMetadata(sfa.Node, "SFlow")
 	if sfa.Conn != nil {
 		sfa.Conn.Close()
 	}
