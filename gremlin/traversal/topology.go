@@ -40,14 +40,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
 
-	inttv := tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
-	sftv := tv.Dedup(ctx, "ID", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlow.LastUpdateMetric.Start")
-
-	allnodes := inttv.GetNodes()
-
-	for _, node := range sftv.GetNodes() {
-		allnodes = append(allnodes, node)
-	}
+	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
 	if tv.Error() != nil {
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
@@ -60,7 +53,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	defer tv.GraphTraversal.RUnlock()
 
 nodeloop:
-	for _, n := range allnodes {
+	for _, n := range tv.GetNodes() {
 		if it.Done() {
 			break nodeloop
 		}
@@ -68,6 +61,9 @@ nodeloop:
 		m, _ := n.GetField("LastUpdateMetric")
 		if m == nil {
 			sf, _ := n.GetField("SFlow.LastUpdateMetric")
+			if sf == nil {
+				continue
+			}
 			sflastMetric, ok := sf.(*sflow.SFMetric)
 			if !ok {
 				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
