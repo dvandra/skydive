@@ -37,7 +37,6 @@ import (
 	"github.com/skydive-project/skydive/flow"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/logging"
-	"github.com/skydive-project/skydive/topology"
 )
 
 const (
@@ -108,9 +107,11 @@ func (sfa *Agent) feedFlowTable() {
 				// records each generating Packets.
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
-			sfa.Graph.Lock()
-			sfa.Graph.AddMetadata(sfa.Node, "SFlow.Counters", sflowPacket.CounterSamples)
-			sfa.Graph.Unlock()
+			//sfa.Graph.Lock()
+
+			Countersamples := sflowPacket.CounterSamples
+			//sfa.Graph.AddMetadata(sfa.Node, "SFlow.Counters", sflowPacket.CounterSamples)
+
 			for _, sample := range sflowPacket.CounterSamples {
 				records := sample.GetRecords()
 				for _, record := range records {
@@ -124,7 +125,7 @@ func (sfa *Agent) feedFlowTable() {
 						Uint32ToInt64 := func(key uint32) int64 {
 							return int64(float64(key))
 						}
-						currMetric := &topology.SFlowMetric{
+						currMetric := &SFMetric{
 							IfIndex:            Uint32ToInt64(gen.IfIndex),
 							IfType:             Uint32ToInt64(gen.IfType),
 							IfSpeed:            Uint64ToInt64(gen.IfSpeed),
@@ -146,22 +147,33 @@ func (sfa *Agent) feedFlowTable() {
 							IfPromiscuousMode:  Uint32ToInt64(gen.IfPromiscuousMode),
 						}
 						now := time.Now()
+
+
 						currMetric.Last = int64(common.UnixMillis(now))
 
-						var prevMetric, lastUpdateMetric *topology.SFlowMetric
+						var prevMetric, lastUpdateMetric *SFMetric
 
 						if metric, err := sfa.Node.GetField("SFlow.Metric"); err == nil {
-							prevMetric = metric.(*topology.SFlowMetric)
-							lastUpdateMetric = currMetric.Sub(prevMetric).(*topology.SFlowMetric)
+							prevMetric = metric.(*SFMetric)
+							lastUpdateMetric = currMetric.Sub(prevMetric).(*SFMetric)
 						}
-						tr.AddMetadata("SFlow.Metric", currMetric)
+						//tr.AddMetadata("SFlow.Metric", currMetric)
 
 						// nothing changed since last update
 						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
 							lastUpdateMetric.Start = prevMetric.Last
 							lastUpdateMetric.Last = int64(common.UnixMillis(now))
-							tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
+							//tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
 						}
+
+						sfl := &SFlow{
+							Counters: Countersamples,
+							Metric: currMetric,
+							LastUpdateMetric: lastUpdateMetric,
+						}
+
+						tr.AddMetadata("SFlow", sfl)
+
 						tr.Commit()
 					}
 				}

@@ -20,17 +20,83 @@
  *
  */
 
-package topology
+package sflow
 
 import (
-	json "encoding/json"
-
+	"encoding/json"
+	"github.com/google/gopacket/layers"
 	"github.com/skydive-project/skydive/common"
 )
 
-// SFlowMetric the interface packets counters
+type SFlow struct {
+	Counters []layers.SFlowCounterSample  `json:"Counters,omitempty"`
+	Metric *SFMetric  `json:"Metric,omitempty"`
+	LastUpdateMetric *SFMetric `json:"LastUpdateMetric,omitempty"`
+}
+
+//SFlowMetadataDecoder implements a json message raw decoder
+func SFlowMetadataDecoder(raw json.RawMessage) (common.Getter, error) {
+	var sf SFlow
+	if err := json.Unmarshal(raw, &sf); err != nil {
+		return nil, err
+	}
+
+	return &sf, nil
+}
+
+// GetField implements Getter interface
+func (sf *SFlow) GetField(key string) (interface{}, error) {
+	switch key {
+	case "Metric" :
+		return sf.Metric, nil
+	case "LastUpdateMetric" :
+		return sf.LastUpdateMetric, nil
+	case "Counters" :
+		return sf.Counters, nil
+	}
+
+	return nil, nil
+}
+
+/*func (sfm *SFlowMetric) getfield() (interface{}, error) {
+	var results []interface{}
+
+	t := reflect.TypeOf(sfm)
+	for i := 0; i < t.NumField(); i++ {
+		vField := t.Field(i)
+		//tField := vField.Type
+		result, error := sfm.GetField(vField.Name)
+		if error == nil {
+			results = append(results, result)
+		}
+	}
+	return results, nil
+}*/
+
+// GetFieldString implements Getter interface
+func (sf *SFlow) GetFieldString(key string) (string, error) {
+	return "", nil
+}
+
+// GetFieldInt64 implements Getter interface
+func (sf *SFlow) GetFieldInt64(key string) (int64, error) {
+	return 0, nil
+}
+
+// GetFieldKeys implements Getter and SFlowMetrics interfaces
+func (sf *SFlow) GetFieldKeys() []string {
+	return sflowFields
+}
+
+var sflowFields []string
+
+func init() {
+	sflowFields = common.StructFieldKeys(SFlow{})
+}
+
+// SFMetric the interface packets counters
 // easyjson:json
-type SFlowMetric struct {
+type SFMetric struct {
 	Start              int64 `json:"Start,omitempty"`
 	Last               int64 `json:"Last,omitempty"`
 	IfIndex            int64 `json:"IfIndex,omitempty"`
@@ -54,38 +120,28 @@ type SFlowMetric struct {
 	IfPromiscuousMode  int64 `json:"IfPromiscuousMode,omitempty"`
 }
 
-// SFlowMetricMetadataDecoder implements a json message raw decoder
-func SFlowMetricMetadataDecoder(raw json.RawMessage) (common.Getter, error) {
-	var metric SFlowMetric
-	if err := json.Unmarshal(raw, &metric); err != nil {
-		return nil, err
-	}
-
-	return &metric, nil
-}
-
 // GetStart returns start time
-func (im *SFlowMetric) GetStart() int64 {
+func (im *SFMetric) GetStart() int64 {
 	return im.Start
 }
 
 // SetStart set start time
-func (im *SFlowMetric) SetStart(start int64) {
+func (im *SFMetric) SetStart(start int64) {
 	im.Start = start
 }
 
 // GetLast returns last time
-func (im *SFlowMetric) GetLast() int64 {
+func (im *SFMetric) GetLast() int64 {
 	return im.Last
 }
 
 // SetLast set last tome
-func (im *SFlowMetric) SetLast(last int64) {
+func (im *SFMetric) SetLast(last int64) {
 	im.Last = last
 }
 
 // GetFieldInt64 implements Getter and SFlowMetrics interfaces
-func (im *SFlowMetric) GetFieldInt64(field string) (int64, error) {
+func (im *SFMetric) GetFieldInt64(field string) (int64, error) {
 	switch field {
 	case "Start":
 		return im.Start, nil
@@ -135,20 +191,20 @@ func (im *SFlowMetric) GetFieldInt64(field string) (int64, error) {
 }
 
 // GetField implements Getter interface
-func (im *SFlowMetric) GetField(key string) (interface{}, error) {
+func (im *SFMetric) GetField(key string) (interface{}, error) {
 	return im.GetFieldInt64(key)
 }
 
 // GetFieldString implements Getter interface
-func (im *SFlowMetric) GetFieldString(key string) (string, error) {
+func (im *SFMetric) GetFieldString(key string) (string, error) {
 	return "", common.ErrFieldNotFound
 }
 
 // Add sum two metrics and return a new SFlowMetrics object
-func (im *SFlowMetric) Add(m common.Metric) common.Metric {
-	om := m.(*SFlowMetric)
+func (im *SFMetric) Add(m common.Metric) common.Metric {
+	om := m.(*SFMetric)
 
-	return &SFlowMetric{
+	return &SFMetric{
 		Start:              im.Start,
 		Last:               im.Last,
 		IfIndex:            im.IfIndex + om.IfIndex,
@@ -174,10 +230,10 @@ func (im *SFlowMetric) Add(m common.Metric) common.Metric {
 }
 
 // Sub subtract two metrics and return a new SFlowMetrics object
-func (im *SFlowMetric) Sub(m common.Metric) common.Metric {
-	om := m.(*SFlowMetric)
+func (im *SFMetric) Sub(m common.Metric) common.Metric {
+	om := m.(*SFMetric)
 
-	return &SFlowMetric{
+	return &SFMetric{
 		Start:              im.Start,
 		Last:               im.Last,
 		IfIndex:            im.IfIndex - om.IfIndex,
@@ -203,7 +259,7 @@ func (im *SFlowMetric) Sub(m common.Metric) common.Metric {
 }
 
 // IsZero returns true if all the values are equal to zero
-func (im *SFlowMetric) IsZero() bool {
+func (im *SFMetric) IsZero() bool {
 	// sum as these numbers can't be <= 0
 	return (im.IfIndex +
 		im.IfType +
@@ -226,8 +282,8 @@ func (im *SFlowMetric) IsZero() bool {
 		im.IfPromiscuousMode) == 0
 }
 
-func (im *SFlowMetric) applyRatio(ratio float64) *SFlowMetric {
-	return &SFlowMetric{
+func (im *SFMetric) applyRatio(ratio float64) *SFMetric {
+	return &SFMetric{
 		Start:              im.Start,
 		Last:               im.Last,
 		IfIndex:            int64(float64(im.IfIndex) * ratio),
@@ -253,7 +309,7 @@ func (im *SFlowMetric) applyRatio(ratio float64) *SFlowMetric {
 }
 
 // Split splits a metric into two parts
-func (im *SFlowMetric) Split(cut int64) (common.Metric, common.Metric) {
+func (im *SFMetric) Split(cut int64) (common.Metric, common.Metric) {
 	if cut < im.Start {
 		return nil, im
 	} else if cut > im.Last {
@@ -281,12 +337,12 @@ func (im *SFlowMetric) Split(cut int64) (common.Metric, common.Metric) {
 }
 
 // GetFieldKeys implements Getter and SFlowMetrics interfaces
-func (im *SFlowMetric) GetFieldKeys() []string {
+func (im *SFMetric) GetFieldKeys() []string {
 	return sflowmetricsFields
 }
 
 var sflowmetricsFields []string
 
 func init() {
-	sflowmetricsFields = common.StructFieldKeys(SFlowMetric{})
+	sflowmetricsFields = common.StructFieldKeys(SFMetric{})
 }
