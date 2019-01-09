@@ -34,7 +34,6 @@ import (
 	"github.com/skydive-project/skydive/common"
 	"github.com/skydive-project/skydive/filters"
 	"github.com/skydive-project/skydive/graffiti/graph"
-	"github.com/skydive-project/skydive/logging"
 )
 
 const (
@@ -904,10 +903,8 @@ func (tv *GraphTraversalV) Dedup(ctx StepContext, s ...interface{}) *GraphTraver
 
 	var keys []string
 	if len(s) > 0 {
-		logging.GetLogger().Infof("Topology.Interfacemetric.Dedup.s = %v", s)
 		for _, key := range s {
 			k, ok := key.(string)
-			logging.GetLogger().Infof("Topology.Interfacemetric.Dedup.s.key = %s", k)
 			if !ok {
 				return &GraphTraversalV{GraphTraversal: tv.GraphTraversal, error: errors.New("Dedup parameters have to be string keys")}
 			}
@@ -934,25 +931,35 @@ func (tv *GraphTraversalV) Dedup(ctx StepContext, s ...interface{}) *GraphTraver
 		if len(keys) != 0 {
 			values := make([]interface{}, len(keys))
 			for i, key := range keys {
-				values[i], _ = n.GetField(key)
+				v, err := n.GetField(key)
+				if err != nil {
+					skip = true
+					break
+				}
+				values[i] = v
 			}
 
-			if kvisited, err = hashstructure.Hash(values, nil); err != nil {
-				skip = true
+			if !skip {
+				if kvisited, err = hashstructure.Hash(values, nil); err != nil {
+					skip = true
+				}
 			}
 		} else {
 			kvisited = n.ID
 		}
 
-		_, ok := visited[kvisited]
-		if ok || !it.Next() {
+		if !skip {
+			if _, ok := visited[kvisited]; ok {
+				continue
+			}
+			visited[kvisited] = true
+		}
+
+		if !it.Next() {
 			continue
 		}
 
 		ntv.nodes = append(ntv.nodes, n)
-		if !skip {
-			visited[kvisited] = true
-		}
 	}
 
 	return ntv

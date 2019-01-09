@@ -63,12 +63,6 @@ type Agent struct {
 	Node       *graph.Node
 }
 
-//type SFlow struct {
-//	Counters layers.SFlowCounterSample
-//	Metric common.Metric
-//	LastUpdateMetric common.Metric
-//}
-
 // AgentAllocator describes an SFlow agent allocator to manage multiple SFlow agent probe
 type AgentAllocator struct {
 	common.RWMutex
@@ -116,6 +110,7 @@ func (sfa *Agent) feedFlowTable() {
 			}
 			sfa.Graph.Lock()
 			sfa.Graph.AddMetadata(sfa.Node, "SFlow.Counters", sflowPacket.CounterSamples)
+			//logging.GetLogger().Infof("SFlowCounters = %v", sflowPacket.CounterSamples)
 			sfa.Graph.Unlock()
 			for _, sample := range sflowPacket.CounterSamples {
 				records := sample.GetRecords()

@@ -24,9 +24,170 @@ package topology
 
 import (
 	json "encoding/json"
-
+	"github.com/google/gopacket/layers"
 	"github.com/skydive-project/skydive/common"
+	"reflect"
 )
+
+type SFlow struct {
+	Counters []layers.SFlowCounterSample
+	Metric SFlowMetric
+	LastUpdateMetric SFlowMetric
+}
+
+//SFlowMetadataDecoder implements a json message raw decoder
+func SFlowMetadataDecoder(raw json.RawMessage) (common.Getter, error) {
+	var sf SFlow
+	if err := json.Unmarshal(raw, &sf); err != nil {
+		return nil, err
+	}
+
+	return &sf, nil
+}
+
+// GetField implements Getter interface
+func (sf *SFlow) GetField(key string) (interface{}, error) {
+	var results []interface{}
+
+	switch key {
+	case "Metric" :
+		result1, error := sf.Metric.getfield()
+		if error == nil {
+			results = append(results, result1)
+		}
+	case "LastUpdateMetric" :
+		result2, error := sf.LastUpdateMetric.getfield()
+		if error == nil {
+			results = append(results, result2)
+		}
+	case "Counters" :
+		results = append(results, sf.Counters)
+	}
+
+	return results, nil
+}
+
+func (sfm *SFlowMetric) getfield() (interface{}, error) {
+	var results []interface{}
+
+	t := reflect.TypeOf(sfm)
+	for i := 0; i < t.NumField(); i++ {
+		vField := t.Field(i)
+		//tField := vField.Type
+		result, error := sfm.GetField(vField.Name)
+		if error == nil {
+			results = append(results, result)
+		}
+	}
+	return results, nil
+}
+
+	/*result1, error := sfm.GetField("Start")
+	if error == nil {
+		results = append(results, result1)
+	}
+	result2, error := sfm.GetField("Last")
+	if error == nil {
+		results = append(results, result2)
+	}
+	result3, error := sfm.GetField("IfIndex")
+	if error == nil {
+		results = append(results, result3)
+	}
+	result4, error := sfm.GetField("IfType")
+	if error == nil {
+		results = append(results, result4)
+	}
+	result5, error := sfm.GetField("IfSpeed")
+	if error == nil {
+		results = append(results, result5)
+	}
+	result6, error := sfm.GetField("IfDirection")
+	if error == nil {
+		results = append(results, result6)
+	}
+	result7, error := sfm.GetField("IfStatus")
+	if error == nil {
+		results = append(results, result7)
+	}
+	result8, error := sfm.GetField("IfInOctets")
+	if error == nil {
+		results = append(results, result8)
+	}
+	result9, error := sfm.GetField("IfInUcastPkts")
+	if error == nil {
+		results = append(results, result9)
+	}
+	result10, error := sfm.GetField("IfInMulticastPkts")
+	if error == nil {
+		results = append(results, result10)
+	}
+	result11, error := sfm.GetField("IfInBroadcastPkts")
+	if error == nil {
+		results = append(results, result11)
+	}
+	result12, error := sfm.GetField("IfInDiscards")
+	if error == nil {
+		results = append(results, result12)
+	}
+	result13, error := sfm.GetField("IfInErrors")
+	if error == nil {
+		results = append(results, result13)
+	}
+	result14, error := sfm.GetField("IfInUnknownProtos")
+	if error == nil {
+		results = append(results, result14)
+	}
+	result15, error := sfm.GetField("IfOutOctets")
+	if error == nil {
+		results = append(results, result15)
+	}
+	result16, error := sfm.GetField("IfOutUcastPkts")
+	if error == nil {
+		results = append(results, result16)
+	}
+	result17, error := sfm.GetField("IfOutMulticastPkts")
+	if error == nil {
+		results = append(results, result17)
+	}
+	result18, error := sfm.GetField("IfOutBroadcastPkts")
+	if error == nil {
+		results = append(results, result18)
+	}
+	result19, error := sfm.GetField("IfOutDiscards")
+	if error == nil {
+		results = append(results, result19)
+	}
+	result20, error := sfm.GetField("IfOutErrors")
+	if error == nil {
+		results = append(results, result20)
+	}
+	result21, error := sfm.GetField("IfPromiscuousMode")
+	if error == nil {
+		results = append(results, result21)
+	}*/
+
+
+// GetFieldString implements Getter interface
+func (sf *SFlow) GetFieldString(key string) (string, error) {
+	return "", nil
+}
+
+// GetFieldInt64 implements Getter interface
+func (sf *SFlow) GetFieldInt64(key string) (int64, error) {
+	return 0, nil
+}
+
+// GetFieldKeys implements Getter and SFlowMetrics interfaces
+func (sf *SFlow) GetFieldKeys() []string {
+	return sflowFields
+}
+
+var sflowFields []string
+
+func init() {
+	sflowFields = common.StructFieldKeys(SFlow{})
+}
 
 // SFlowMetric the interface packets counters
 // easyjson:json
@@ -52,16 +213,6 @@ type SFlowMetric struct {
 	IfOutDiscards      int64 `json:"IfOutDiscards,omitempty"`
 	IfOutErrors        int64 `json:"IfOutErrors,omitempty"`
 	IfPromiscuousMode  int64 `json:"IfPromiscuousMode,omitempty"`
-}
-
-// SFlowMetricMetadataDecoder implements a json message raw decoder
-func SFlowMetricMetadataDecoder(raw json.RawMessage) (common.Getter, error) {
-	var metric SFlowMetric
-	if err := json.Unmarshal(raw, &metric); err != nil {
-		return nil, err
-	}
-
-	return &metric, nil
 }
 
 // GetStart returns start time

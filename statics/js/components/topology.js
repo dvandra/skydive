@@ -421,7 +421,7 @@ var TopologyComponent = {
     currentNodeMetadata: function() {
       if (!this.currentNode) return null;
       return this.extractMetadata(this.currentNode.metadata,
-        ['LastUpdateMetric', 'Metric', 'Ovs.Metric', 'Ovs.LastUpdateMetric', 'RoutingTables', 'Features', 'K8s.Extra', 'Docker']);
+        ['LastUpdateMetric', 'Metric', 'Ovs.Metric', 'Ovs.LastUpdateMetric', 'SFlow.Metric', 'SFlow.LastUpdateMetric', 'RoutingTables', 'Features', 'K8s.Extra', 'Docker']);
     },
 
     currentNodeFlowsQuery: function() {
@@ -466,13 +466,13 @@ var TopologyComponent = {
     },
 
     currentNodeSFlowMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlowMetric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlowMetric);
+        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.Metric) return null;
+        return this.normalizeMetric(this.currentNode.metadata.SFlow.Metric);
     },
 
     currentNodeSFlowLastUpdateMetric: function() {
-        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlowLastUpdateMetric) return null;
-        return this.normalizeMetric(this.currentNode.metadata.SFlowLastUpdateMetric);
+        if (!this.currentNodeMetadata || !this.currentNode.metadata.SFlow || !this.currentNode.metadata.SFlow.LastUpdateMetric) return null;
+        return this.normalizeMetric(this.currentNode.metadata.SFlow.LastUpdateMetric);
     },
 
     canReadCaptures: function() {

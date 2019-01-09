@@ -384,6 +384,5 @@ func init() {
 	graph.NodeMetadataDecoders["Neighbors"] = netlink.NeighborMetadataDecoder
 	graph.NodeMetadataDecoders["Metric"] = topology.InterfaceMetricMetadataDecoder
 	graph.NodeMetadataDecoders["LastUpdateMetric"] = topology.InterfaceMetricMetadataDecoder
-	graph.NodeMetadataDecoders["SFlow.Metric"] = topology.SFlowMetricMetadataDecoder
-	graph.NodeMetadataDecoders["SFlow.LastUpdateMetric"] = topology.SFlowMetricMetadataDecoder
+	graph.NodeMetadataDecoders["SFlow"] = topology.SFlowMetadataDecoder
 }

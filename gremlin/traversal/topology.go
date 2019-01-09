@@ -43,7 +43,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	//var inttv, sftv *traversal.GraphTraversalV
 	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
 
-	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start", "SFlow.LastUpdateMetric.Start")//.Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
+	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
 	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
 	//logging.GetLogger().Infof("Topology.Interfacemetric.inttv = %v", inttv)
 	// := tv.Dedup(ctx, "ID", "SFlowLastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlowLastUpdateMetric.Start")
@@ -64,6 +64,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	metrics := make(map[string][]common.Metric)
 	logging.GetLogger().Infof("Topology.Interfacemetric.metric = %v", metrics)
 	it := ctx.PaginationRange.Iterator()
+	logging.GetLogger().Infof("Topology.Interfacemetric.it = %v", it)
 	gslice := tv.GraphTraversal.Graph.GetContext().TimeSlice
 	logging.GetLogger().Infof("Topology.Interfacemetric.gslice = %v", gslice)
 
@@ -80,6 +81,9 @@ nodeloop:
 		logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m = %v", m)
 		if m == nil {
 			sf, _ := n.GetField("SFlow.LastUpdateMetric")
+			if sf == nil {
+				continue
+			}
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_ = %v", sf)
 			sflastMetric, ok := sf.(*topology.SFlowMetric)
 			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_lastm = %v", sflastMetric)
