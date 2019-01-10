@@ -24,13 +24,12 @@ package traversal
 
 import (
 	"errors"
-	"github.com/skydive-project/skydive/sflow"
 	"strings"
 
 	"github.com/skydive-project/skydive/common"
 	"github.com/skydive-project/skydive/graffiti/graph"
 	"github.com/skydive-project/skydive/graffiti/graph/traversal"
-	"github.com/skydive-project/skydive/logging"
+	"github.com/skydive-project/skydive/sflow"
 	"github.com/skydive-project/skydive/topology"
 	"github.com/skydive-project/skydive/topology/probes/socketinfo"
 )
@@ -41,19 +40,7 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
 
-	//tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
-	inttv := tv.Dedup(ctx, "ID", "LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
-	logging.GetLogger().Infof("Topology.Interfacemetric.tv = %v", tv)
-	logging.GetLogger().Infof("Topology.Interfacemetric.inttv = %v", inttv)
-	sftv := tv.Dedup(ctx, "ID", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "SFlow.LastUpdateMetric.Start")
-	logging.GetLogger().Infof("Topology.Interfacemetric.sftv = %v", sftv)
-
-	allnodes := inttv.GetNodes()
-
-	for _, node := range sftv.GetNodes() {
-		allnodes = append(allnodes, node)
-	}
-	logging.GetLogger().Infof("Topology.Interfacemetric.allnodes = %v", allnodes)
+	tv = tv.Dedup(ctx, "ID", "LastUpdateMetric.Start", "SFlow.LastUpdateMetric.Start").Sort(ctx, common.SortAscending, "LastUpdateMetric.Start")
 	if tv.Error() != nil {
 		return NewMetricsTraversalStepFromError(tv.Error())
 	}
@@ -66,39 +53,34 @@ func InterfaceMetrics(ctx traversal.StepContext, tv *traversal.GraphTraversalV) 
 	defer tv.GraphTraversal.RUnlock()
 
 nodeloop:
-	for _, n := range allnodes {
+	for _, n := range tv.GetNodes() {
 		if it.Done() {
 			break nodeloop
 		}
 
 		m, _ := n.GetField("LastUpdateMetric")
-		logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m_ = %v", m)
 		if m == nil {
 			sf, _ := n.GetField("SFlow.LastUpdateMetric")
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_ = %v", sf)
+			if sf == nil {
+				continue
+			}
 			sflastMetric, ok := sf.(*sflow.SFMetric)
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf_lastm = %v", sflastMetric)
 			if !ok {
 				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
 			}
 			if gslice == nil || (sflastMetric.Start > gslice.Start && sflastMetric.Last < gslice.Last) && it.Next() {
 				metrics[string(n.ID)] = append(metrics[string(n.ID)], sflastMetric)
 			}
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf = %s", string(n.ID))
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.sf = %v", metrics[string(n.ID)])
-		}else {
+		} else {
 			lastMetric, ok := m.(*topology.InterfaceMetric)
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.interfacelastm = %v", lastMetric)
 			if !ok {
 				return NewMetricsTraversalStepFromError(errors.New("wrong interface metric type"))
 			}
 			if gslice == nil || (lastMetric.Start > gslice.Start && lastMetric.Last < gslice.Last) && it.Next() {
 				metrics[string(n.ID)] = append(metrics[string(n.ID)], lastMetric)
 			}
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m _ string = %s", string(n.ID))
-			logging.GetLogger().Infof("Topology.Interfacemetric.getnode.m _ metric = %v", metrics[string(n.ID)])
-			}
 		}
+	}
 
 	return NewMetricsTraversalStep(tv.GraphTraversal, metrics)
 }

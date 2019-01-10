@@ -107,10 +107,8 @@ func (sfa *Agent) feedFlowTable() {
 				// records each generating Packets.
 				sfa.FlowTable.FeedWithSFlowSample(&sample, bpf)
 			}
-			//sfa.Graph.Lock()
 
 			Countersamples := sflowPacket.CounterSamples
-			//sfa.Graph.AddMetadata(sfa.Node, "SFlow.Counters", sflowPacket.CounterSamples)
 
 			for _, sample := range sflowPacket.CounterSamples {
 				records := sample.GetRecords()
@@ -148,7 +146,6 @@ func (sfa *Agent) feedFlowTable() {
 						}
 						now := time.Now()
 
-
 						currMetric.Last = int64(common.UnixMillis(now))
 
 						var prevMetric, lastUpdateMetric *SFMetric
@@ -157,24 +154,22 @@ func (sfa *Agent) feedFlowTable() {
 							prevMetric = metric.(*SFMetric)
 							lastUpdateMetric = currMetric.Sub(prevMetric).(*SFMetric)
 						}
-						//tr.AddMetadata("SFlow.Metric", currMetric)
 
 						// nothing changed since last update
 						if lastUpdateMetric != nil && !lastUpdateMetric.IsZero() {
 							lastUpdateMetric.Start = prevMetric.Last
 							lastUpdateMetric.Last = int64(common.UnixMillis(now))
-							//tr.AddMetadata("SFlow.LastUpdateMetric", lastUpdateMetric)
 						}
 
 						sfl := &SFlow{
-							Counters: Countersamples,
-							Metric: currMetric,
+							Counters:         Countersamples,
+							Metric:           currMetric,
 							LastUpdateMetric: lastUpdateMetric,
 						}
-
+						sfa.Graph.Lock()
 						tr.AddMetadata("SFlow", sfl)
-
 						tr.Commit()
+						sfa.Graph.Unlock()
 					}
 				}
 			}
@@ -216,6 +211,7 @@ func (sfa *Agent) Stop() {
 	sfa.Lock()
 	defer sfa.Unlock()
 
+	sfa.Graph.DelMetadata(sfa.Node, "SFlow")
 	if sfa.Conn != nil {
 		sfa.Conn.Close()
 	}
