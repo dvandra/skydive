@@ -157,7 +157,10 @@ func (im *InterfaceMetric) GetFieldString(key string) (string, error) {
 
 // Add sum two metrics and return a new Metrics object
 func (im *InterfaceMetric) Add(m common.Metric) common.Metric {
-	om := m.(*InterfaceMetric)
+	om, ok := m.(*InterfaceMetric)
+	if !ok {
+		return im
+	}
 
 	return &InterfaceMetric{
 		Collisions:        im.Collisions + om.Collisions,

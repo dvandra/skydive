@@ -189,7 +189,10 @@ func (sm *SFMetric) GetFieldString(key string) (string, error) {
 
 // Add sum two metrics and return a new SFlowMetrics object
 func (sm *SFMetric) Add(m common.Metric) common.Metric {
-	om := m.(*SFMetric)
+	om, ok := m.(*SFMetric)
+	if !ok {
+		return sm
+	}
 
 	return &SFMetric{
 		Start:              sm.Start,
