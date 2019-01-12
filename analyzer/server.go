@@ -47,6 +47,7 @@ import (
 	"github.com/skydive-project/skydive/logging"
 	"github.com/skydive-project/skydive/packetinjector"
 	"github.com/skydive-project/skydive/probe"
+	"github.com/skydive-project/skydive/sflow"
 	"github.com/skydive-project/skydive/topology"
 	usertopology "github.com/skydive-project/skydive/topology/enhancers"
 	"github.com/skydive-project/skydive/topology/probes/netlink"
@@ -225,15 +226,6 @@ func NewServerFromConfig() (*Server, error) {
 	uiServer.AddGlobalVar("interface-metric-keys", (&topology.InterfaceMetric{}).GetFieldKeys())
 	uiServer.AddGlobalVar("probes", config.Get("analyzer.topology.probes"))
 
-	// add decoders for specific metadata keys, this aims to keep the same
-	// object type between the agent and the analyzer
-	// Decoder will be used while unmarshal the metadata
-	graph.NodeMetadataDecoders["RoutingTables"] = netlink.RoutingTablesMetadataDecoder
-	graph.NodeMetadataDecoders["FDB"] = netlink.NeighborMetadataDecoder
-	graph.NodeMetadataDecoders["Neighbors"] = netlink.NeighborMetadataDecoder
-	graph.NodeMetadataDecoders["Metric"] = topology.InterfaceMetricMetadataDecoder
-	graph.NodeMetadataDecoders["LastUpdateMetric"] = topology.InterfaceMetricMetadataDecoder
-
 	persistent, err := newGraphBackendFromConfig(etcdClient)
 	if err != nil {
 		return nil, err
@@ -381,4 +373,16 @@ func ClusterAuthenticationOpts() *shttp.AuthenticationOpts {
 		Password: config.GetString("analyzer.auth.cluster.password"),
 		Cookie:   config.GetStringMapString("http.cookie"),
 	}
+}
+
+func init() {
+	// add decoders for specific metadata keys, this aims to keep the same
+	// object type between the agent and the analyzer
+	// Decoder will be used while unmarshal the metadata
+	graph.NodeMetadataDecoders["RoutingTables"] = netlink.RoutingTablesMetadataDecoder
+	graph.NodeMetadataDecoders["FDB"] = netlink.NeighborMetadataDecoder
+	graph.NodeMetadataDecoders["Neighbors"] = netlink.NeighborMetadataDecoder
+	graph.NodeMetadataDecoders["Metric"] = topology.InterfaceMetricMetadataDecoder
+	graph.NodeMetadataDecoders["LastUpdateMetric"] = topology.InterfaceMetricMetadataDecoder
+	graph.NodeMetadataDecoders["SFlow"] = sflow.SFlowMetadataDecoder
 }
