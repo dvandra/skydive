@@ -186,7 +186,30 @@ func aggregateMetrics(m []common.Metric, start, last int64, sliceLength int64, r
 				result[j].SetStart(sStart)
 				result[j].SetLast(sLast)
 			} else {
+				jj := 0
+				s := result[j]
 				result[j] = result[j].Add(s2)
+				if (result[j].Sub(s)).IsZero() {
+					for jj < j {
+						if result[jj] == nil {
+							result[jj] = s2
+							result[jj].SetStart(sStart)
+							result[jj].SetLast(sLast)
+							jj++
+							break
+						} else {
+							ss := result[jj]
+							result[jj] = result[jj].Add(s2)
+							if !(result[jj].Sub(ss)).IsZero() {
+								break
+							}
+						}
+						jj++
+						if jj >= j {
+							result = append(result, s2)
+						}
+					}
+				}
 			}
 
 			if s3 != nil && !s3.IsZero() {

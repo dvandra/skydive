@@ -86,11 +86,7 @@ func init() {
 type SFMetric struct {
 	Start              int64 `json:"Start,omitempty"`
 	Last               int64 `json:"Last,omitempty"`
-	IfIndex            int64 `json:"IfIndex,omitempty"`
-	IfType             int64 `json:"IfType,omitempty"`
 	IfSpeed            int64 `json:"IfSpeed,omitempty"`
-	IfDirection        int64 `json:"IfDirection,omitempty"`
-	IfStatus           int64 `json:"IfStatus,omitempty"`
 	IfInOctets         int64 `json:"IfInOctets,omitempty"`
 	IfInUcastPkts      int64 `json:"IfInUcastPkts,omitempty"`
 	IfInMulticastPkts  int64 `json:"IfInMulticastPkts,omitempty"`
@@ -104,7 +100,17 @@ type SFMetric struct {
 	IfOutBroadcastPkts int64 `json:"IfOutBroadcastPkts,omitempty"`
 	IfOutDiscards      int64 `json:"IfOutDiscards,omitempty"`
 	IfOutErrors        int64 `json:"IfOutErrors,omitempty"`
-	IfPromiscuousMode  int64 `json:"IfPromiscuousMode,omitempty"`
+	OVSDP_NHit         int64 `json:"OVSDP_NHit,omitempty"`
+	OVSDP_NMissed      int64 `json:"OVSDP_NMissed,omitempty"`
+	OVSDP_NLost        int64 `json:"OVSDP_NLost,omitempty"`
+	OVSDP_NMaskHit     int64 `json:"OVSDP_NMaskHit,omitempty"`
+	OVSDP_NFlows       int64 `json:"OVSDP_NFlows,omitempty"`
+	OVSDP_NMasks       int64 `json:"OVSDP_NMasks,omitempty"`
+	//VlanOctets         int64 `json:"VlanOctets,omitempty"`
+	//VlanUcastPkts      int64 `json:"OVSDP_NMasks,omitempty"`
+	//VlanMulticastPkts  int64 `json:"VlanMulticastPkts,omitempty"`
+	//VlanBroadcastPkts  int64 `json:"VlanBroadcastPkts,omitempty"`
+	//VlanDiscards       int64 `json:"VlanDiscards,omitempty"`
 }
 
 // GetStart returns start time
@@ -134,16 +140,8 @@ func (sm *SFMetric) GetFieldInt64(field string) (int64, error) {
 		return sm.Start, nil
 	case "Last":
 		return sm.Last, nil
-	case "IfIndex":
-		return sm.IfIndex, nil
-	case "IfType":
-		return sm.IfType, nil
 	case "IfSpeed":
 		return sm.IfSpeed, nil
-	case "IfDirection":
-		return sm.IfDirection, nil
-	case "IfStatus":
-		return sm.IfStatus, nil
 	case "IfInOctets":
 		return sm.IfInOctets, nil
 	case "IfInUcastPkts":
@@ -170,8 +168,28 @@ func (sm *SFMetric) GetFieldInt64(field string) (int64, error) {
 		return sm.IfOutDiscards, nil
 	case "IfOutErrors":
 		return sm.IfOutErrors, nil
-	case "IfPromiscuousMode":
-		return sm.IfPromiscuousMode, nil
+	case "OVSDP_NHit":
+		return sm.OVSDP_NHit, nil
+	case "OVSDP_NMissed":
+		return sm.OVSDP_NMissed, nil
+	case "OVSDP_NLost":
+		return sm.OVSDP_NLost, nil
+	case "OVSDP_NMaskHit":
+		return sm.OVSDP_NMaskHit, nil
+	case "OVSDP_NFlows":
+		return sm.OVSDP_NFlows, nil
+	case "OVSDP_NMasks":
+		return sm.OVSDP_NMasks, nil
+		/*case "VlanOctets":
+			return sm.VlanOctets, nil
+		case "VlanUcastPkts":
+			return sm.VlanUcastPkts, nil
+		case "VlanMulticastPkts":
+			return sm.VlanMulticastPkts, nil
+		case "VlanBroadcastPkts":
+			return sm.VlanBroadcastPkts, nil
+		case "VlanDiscards":
+			return sm.VlanDiscards, nil*/
 	}
 
 	return 0, common.ErrFieldNotFound
@@ -198,11 +216,7 @@ func (sm *SFMetric) Add(m common.Metric) common.Metric {
 	return &SFMetric{
 		Start:              sm.Start,
 		Last:               sm.Last,
-		IfIndex:            sm.IfIndex + om.IfIndex,
-		IfType:             sm.IfType + om.IfType,
-		IfSpeed:            sm.IfSpeed + om.IfSpeed,
-		IfDirection:        sm.IfDirection + om.IfDirection,
-		IfStatus:           sm.IfStatus + om.IfStatus,
+		IfSpeed:            sm.IfSpeed,
 		IfInOctets:         sm.IfInOctets + om.IfInOctets,
 		IfInUcastPkts:      sm.IfInUcastPkts + om.IfInUcastPkts,
 		IfInMulticastPkts:  sm.IfInMulticastPkts + om.IfInMulticastPkts,
@@ -216,7 +230,17 @@ func (sm *SFMetric) Add(m common.Metric) common.Metric {
 		IfOutBroadcastPkts: sm.IfOutBroadcastPkts + om.IfOutBroadcastPkts,
 		IfOutDiscards:      sm.IfOutDiscards + om.IfOutDiscards,
 		IfOutErrors:        sm.IfOutErrors + om.IfOutErrors,
-		IfPromiscuousMode:  sm.IfPromiscuousMode + om.IfPromiscuousMode,
+		OVSDP_NHit:         sm.OVSDP_NHit + om.OVSDP_NHit,
+		OVSDP_NMissed:      sm.OVSDP_NMissed + om.OVSDP_NMissed,
+		OVSDP_NLost:        sm.OVSDP_NLost + om.OVSDP_NLost,
+		OVSDP_NMaskHit:     sm.OVSDP_NMaskHit + om.OVSDP_NMaskHit,
+		OVSDP_NFlows:       sm.OVSDP_NFlows + om.OVSDP_NFlows,
+		OVSDP_NMasks:       sm.OVSDP_NMasks + om.OVSDP_NMasks,
+		/*VlanOctets:  sm.VlanOctets + om.VlanOctets,
+		VlanUcastPkts:  sm.VlanUcastPkts + om.VlanUcastPkts,
+		VlanMulticastPkts:  sm.VlanMulticastPkts + om.VlanMulticastPkts,
+		VlanBroadcastPkts:  sm.VlanBroadcastPkts + om.VlanBroadcastPkts,
+		VlanDiscards:  sm.VlanDiscards + om.VlanDiscards,*/
 	}
 }
 
@@ -230,11 +254,7 @@ func (sm *SFMetric) Sub(m common.Metric) common.Metric {
 	return &SFMetric{
 		Start:              sm.Start,
 		Last:               sm.Last,
-		IfIndex:            sm.IfIndex - om.IfIndex,
-		IfType:             sm.IfType - om.IfType,
-		IfSpeed:            sm.IfSpeed - om.IfSpeed,
-		IfDirection:        sm.IfDirection - om.IfDirection,
-		IfStatus:           sm.IfStatus - om.IfStatus,
+		IfSpeed:            sm.IfSpeed,
 		IfInOctets:         sm.IfInOctets - om.IfInOctets,
 		IfInUcastPkts:      sm.IfInUcastPkts - om.IfInUcastPkts,
 		IfInMulticastPkts:  sm.IfInMulticastPkts - om.IfInMulticastPkts,
@@ -248,19 +268,24 @@ func (sm *SFMetric) Sub(m common.Metric) common.Metric {
 		IfOutBroadcastPkts: sm.IfOutBroadcastPkts - om.IfOutBroadcastPkts,
 		IfOutDiscards:      sm.IfOutDiscards - om.IfOutDiscards,
 		IfOutErrors:        sm.IfOutErrors - om.IfOutErrors,
-		IfPromiscuousMode:  sm.IfPromiscuousMode - om.IfPromiscuousMode,
+		OVSDP_NHit:         sm.OVSDP_NHit - om.OVSDP_NHit,
+		OVSDP_NMissed:      sm.OVSDP_NMissed - om.OVSDP_NMissed,
+		OVSDP_NLost:        sm.OVSDP_NLost - om.OVSDP_NLost,
+		OVSDP_NMaskHit:     sm.OVSDP_NMaskHit - om.OVSDP_NMaskHit,
+		OVSDP_NFlows:       sm.OVSDP_NFlows - om.OVSDP_NFlows,
+		OVSDP_NMasks:       sm.OVSDP_NMasks - om.OVSDP_NMasks,
+		/*VlanOctets:  sm.VlanOctets - om.VlanOctets,
+		VlanUcastPkts:  sm.VlanUcastPkts - om.VlanUcastPkts,
+		VlanMulticastPkts:  sm.VlanMulticastPkts - om.VlanMulticastPkts,
+		VlanBroadcastPkts:  sm.VlanBroadcastPkts - om.VlanBroadcastPkts,
+		VlanDiscards:  sm.VlanDiscards - om.VlanDiscards,*/
 	}
 }
 
 // IsZero returns true if all the values are equal to zero
 func (sm *SFMetric) IsZero() bool {
 	// sum as these numbers can't be <= 0
-	return (sm.IfIndex +
-		sm.IfType +
-		sm.IfSpeed +
-		sm.IfDirection +
-		sm.IfStatus +
-		sm.IfInOctets +
+	return (sm.IfInOctets +
 		sm.IfInUcastPkts +
 		sm.IfInMulticastPkts +
 		sm.IfInBroadcastPkts +
@@ -273,18 +298,24 @@ func (sm *SFMetric) IsZero() bool {
 		sm.IfOutBroadcastPkts +
 		sm.IfOutDiscards +
 		sm.IfOutErrors +
-		sm.IfPromiscuousMode) == 0
+		sm.OVSDP_NHit +
+		sm.OVSDP_NMissed +
+		sm.OVSDP_NLost +
+		sm.OVSDP_NMaskHit +
+		sm.OVSDP_NFlows +
+		sm.OVSDP_NMasks) == 0
+	/*sm.VlanOctets +
+	sm.VlanUcastPkts +
+	sm.VlanMulticastPkts +
+	sm.VlanBroadcastPkts +
+	sm.VlanDiscards*/
 }
 
 func (sm *SFMetric) applyRatio(ratio float64) *SFMetric {
 	return &SFMetric{
 		Start:              sm.Start,
 		Last:               sm.Last,
-		IfIndex:            int64(float64(sm.IfIndex) * ratio),
-		IfType:             int64(float64(sm.IfType) * ratio),
-		IfSpeed:            int64(float64(sm.IfSpeed) * ratio),
-		IfDirection:        int64(float64(sm.IfDirection) * ratio),
-		IfStatus:           int64(float64(sm.IfStatus) * ratio),
+		IfSpeed:            sm.IfSpeed, //int64(float64(sm.IfSpeed) * ratio),
 		IfInOctets:         int64(float64(sm.IfInOctets) * ratio),
 		IfInUcastPkts:      int64(float64(sm.IfInUcastPkts) * ratio),
 		IfInMulticastPkts:  int64(float64(sm.IfInMulticastPkts) * ratio),
@@ -298,7 +329,18 @@ func (sm *SFMetric) applyRatio(ratio float64) *SFMetric {
 		IfOutBroadcastPkts: int64(float64(sm.IfOutBroadcastPkts) * ratio),
 		IfOutDiscards:      int64(float64(sm.IfOutDiscards) * ratio),
 		IfOutErrors:        int64(float64(sm.IfOutErrors) * ratio),
-		IfPromiscuousMode:  int64(float64(sm.IfPromiscuousMode) * ratio),
+		OVSDP_NHit:         int64(float64(sm.OVSDP_NHit) * ratio),
+		OVSDP_NMissed:      int64(float64(sm.OVSDP_NMissed) * ratio),
+		OVSDP_NLost:        int64(float64(sm.OVSDP_NLost) * ratio),
+		OVSDP_NMaskHit:     int64(float64(sm.OVSDP_NMaskHit) * ratio),
+		OVSDP_NFlows:       int64(float64(sm.OVSDP_NFlows) * ratio),
+		OVSDP_NMasks:       int64(float64(sm.OVSDP_NMasks) * ratio),
+		/*VlanOctets:  int64(float64(sm.VlanOctets) * ratio),
+		VlanUcastPkts:  int64(float64(sm.VlanUcastPkts) * ratio),
+		VlanMulticastPkts:  int64(float64(sm.VlanMulticastPkts) * ratio),
+		VlanBroadcastPkts:  int64(float64(sm.VlanBroadcastPkts) * ratio),
+		VlanDiscards:  int64(float64(sm.VlanDiscards) * ratio),*/
+
 	}
 }
 
