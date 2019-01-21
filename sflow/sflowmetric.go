@@ -84,8 +84,8 @@ func init() {
 // SFMetric the SFlow Counter Samples
 // easyjson:json
 type SFMetric struct {
-	Start              int64 `json:"Start,omitempty"`
-	Last               int64 `json:"Last,omitempty"`
+	Start int64 `json:"Start,omitempty"`
+	Last  int64 `json:"Last,omitempty"`
 	//IfIndex            int64 `json:"IfIndex,omitempty"`
 	//IfType             int64 `json:"IfType,omitempty"`
 	//IfSpeed            int64 `json:"IfSpeed,omitempty"`
@@ -105,6 +105,16 @@ type SFMetric struct {
 	IfOutDiscards      int64 `json:"IfOutDiscards,omitempty"`
 	IfOutErrors        int64 `json:"IfOutErrors,omitempty"`
 	//IfPromiscuousMode  int64 `json:"IfPromiscuousMode,omitempty"`
+	OvsdpNHit      int64 `json:"OvsdpNHit,omitempty"`
+	OvsdpNMissed   int64 `json:"OvsdpNMissed,omitempty"`
+	OvsdpNLost     int64 `json:"OvsdpNLost,omitempty"`
+	OvsdpNMaskHit  int64 `json:"OvsdpNMaskHit,omitempty"`
+	OvsdpNFlows    int64 `json:"OvsdpNFlows,omitempty"`
+	OvsdpNMasks    int64 `json:"OvsdpNMasks,omitempty"`
+	OvsAppFdOpen   int64 `json:"OvsAppFdOpen,omitempty"`
+	OvsAppFdMax    int64 `json:"OvsAppFdMax,omitempty"`
+	OvsAppConnOpen int64 `json:"OvsAppConnOpen,omitempty"`
+	OvsAppConnMax  int64 `json:"OvsAppConnMax,omitempty"`
 }
 
 // GetStart returns start time
@@ -172,6 +182,26 @@ func (sm *SFMetric) GetFieldInt64(field string) (int64, error) {
 		return sm.IfOutErrors, nil
 	//case "IfPromiscuousMode":
 	//	return sm.IfPromiscuousMode, nil
+	case "OvsdpNHit":
+		return sm.OvsdpNHit, nil
+	case "OvsdpNMissed":
+		return sm.OvsdpNMissed, nil
+	case "OvsdpNLost":
+		return sm.OvsdpNLost, nil
+	case "OvsdpNMaskHit":
+		return sm.OvsdpNMaskHit, nil
+	case "OvsdpNFlows":
+		return sm.OvsdpNFlows, nil
+	case "OvsdpNMasks":
+		return sm.OvsdpNMasks, nil
+	case "OvsAppFdOpen":
+		return sm.OvsAppFdOpen, nil
+	case "OvsAppFdMax":
+		return sm.OvsAppFdMax, nil
+	case "OvsAppConnOpen":
+		return sm.OvsAppConnOpen, nil
+	case "OvsAppConnMax":
+		return sm.OvsAppConnMax, nil
 	}
 
 	return 0, common.ErrFieldNotFound
@@ -214,6 +244,16 @@ func (sm *SFMetric) Add(m common.Metric) common.Metric {
 		IfOutBroadcastPkts: sm.IfOutBroadcastPkts + om.IfOutBroadcastPkts,
 		IfOutDiscards:      sm.IfOutDiscards + om.IfOutDiscards,
 		IfOutErrors:        sm.IfOutErrors + om.IfOutErrors,
+		OvsdpNHit:          sm.OvsdpNHit + om.OvsdpNHit,
+		OvsdpNMissed:       sm.OvsdpNMissed + om.OvsdpNMissed,
+		OvsdpNLost:         sm.OvsdpNLost + om.OvsdpNLost,
+		OvsdpNMaskHit:      sm.OvsdpNMaskHit + om.OvsdpNMaskHit,
+		OvsdpNFlows:        sm.OvsdpNFlows + om.OvsdpNFlows,
+		OvsdpNMasks:        sm.OvsdpNMasks + om.OvsdpNMasks,
+		OvsAppFdOpen:       sm.OvsAppFdOpen + om.OvsAppFdOpen,
+		OvsAppFdMax:        sm.OvsAppFdMax + om.OvsAppFdMax,
+		OvsAppConnOpen:     sm.OvsAppConnOpen + om.OvsAppConnOpen,
+		OvsAppConnMax:      sm.OvsAppConnMax + om.OvsAppConnMax,
 		Start:              sm.Start,
 		Last:               sm.Last,
 		//IfPromiscuousMode:  sm.IfPromiscuousMode + om.IfPromiscuousMode,
@@ -246,6 +286,16 @@ func (sm *SFMetric) Sub(m common.Metric) common.Metric {
 		IfOutBroadcastPkts: sm.IfOutBroadcastPkts - om.IfOutBroadcastPkts,
 		IfOutDiscards:      sm.IfOutDiscards - om.IfOutDiscards,
 		IfOutErrors:        sm.IfOutErrors - om.IfOutErrors,
+		OvsdpNHit:          sm.OvsdpNHit - om.OvsdpNHit,
+		OvsdpNMissed:       sm.OvsdpNMissed - om.OvsdpNMissed,
+		OvsdpNLost:         sm.OvsdpNLost - om.OvsdpNLost,
+		OvsdpNMaskHit:      sm.OvsdpNMaskHit - om.OvsdpNMaskHit,
+		OvsdpNFlows:        sm.OvsdpNFlows - om.OvsdpNFlows,
+		OvsdpNMasks:        sm.OvsdpNMasks - om.OvsdpNMasks,
+		OvsAppFdOpen:       sm.OvsAppFdOpen - om.OvsAppFdOpen,
+		OvsAppFdMax:        sm.OvsAppFdMax - om.OvsAppFdMax,
+		OvsAppConnOpen:     sm.OvsAppConnOpen - om.OvsAppConnOpen,
+		OvsAppConnMax:      sm.OvsAppConnMax - om.OvsAppConnMax,
 		Start:              sm.Start,
 		Last:               sm.Last,
 		//IfPromiscuousMode:  sm.IfPromiscuousMode - om.IfPromiscuousMode,
@@ -255,12 +305,12 @@ func (sm *SFMetric) Sub(m common.Metric) common.Metric {
 // IsZero returns true if all the values are equal to zero
 func (sm *SFMetric) IsZero() bool {
 	// sum as these numbers can't be <= 0
-	return (//sm.IfIndex +
-		//sm.IfType +
-		//sm.IfSpeed +
-		//sm.IfDirection +
-		//sm.IfStatus +
-		sm.IfInOctets +
+	return ( //sm.IfIndex +
+	//sm.IfType +
+	//sm.IfSpeed +
+	//sm.IfDirection +
+	//sm.IfStatus +
+	sm.IfInOctets +
 		sm.IfInUcastPkts +
 		sm.IfInMulticastPkts +
 		sm.IfInBroadcastPkts +
@@ -272,19 +322,29 @@ func (sm *SFMetric) IsZero() bool {
 		sm.IfOutMulticastPkts +
 		sm.IfOutBroadcastPkts +
 		sm.IfOutDiscards +
-		sm.IfOutErrors) == 0
-		//sm.IfPromiscuousMode)
+		sm.IfOutErrors +
+		sm.OvsdpNHit +
+		sm.OvsdpNMissed +
+		sm.OvsdpNLost +
+		sm.OvsdpNMaskHit +
+		sm.OvsdpNFlows +
+		sm.OvsdpNMasks +
+		sm.OvsAppFdOpen +
+		sm.OvsAppFdMax +
+		sm.OvsAppConnOpen +
+		sm.OvsAppConnMax) == 0
+	//sm.IfPromiscuousMode)
 }
 
 func (sm *SFMetric) applyRatio(ratio float64) *SFMetric {
 	return &SFMetric{
-		Start:              sm.Start,
-		Last:               sm.Last,
-	//	IfIndex:            int64(float64(sm.IfIndex) * ratio),
-	//	IfType:             int64(float64(sm.IfType) * ratio),
-	//	IfSpeed:            int64(float64(sm.IfSpeed) * ratio),
-	//	IfDirection:        int64(float64(sm.IfDirection) * ratio),
-	//	IfStatus:           int64(float64(sm.IfStatus) * ratio),
+		Start: sm.Start,
+		Last:  sm.Last,
+		//	IfIndex:            int64(float64(sm.IfIndex) * ratio),
+		//	IfType:             int64(float64(sm.IfType) * ratio),
+		//	IfSpeed:            int64(float64(sm.IfSpeed) * ratio),
+		//	IfDirection:        int64(float64(sm.IfDirection) * ratio),
+		//	IfStatus:           int64(float64(sm.IfStatus) * ratio),
 		IfInOctets:         int64(float64(sm.IfInOctets) * ratio),
 		IfInUcastPkts:      int64(float64(sm.IfInUcastPkts) * ratio),
 		IfInMulticastPkts:  int64(float64(sm.IfInMulticastPkts) * ratio),
@@ -298,7 +358,17 @@ func (sm *SFMetric) applyRatio(ratio float64) *SFMetric {
 		IfOutBroadcastPkts: int64(float64(sm.IfOutBroadcastPkts) * ratio),
 		IfOutDiscards:      int64(float64(sm.IfOutDiscards) * ratio),
 		IfOutErrors:        int64(float64(sm.IfOutErrors) * ratio),
-	//	IfPromiscuousMode:  int64(float64(sm.IfPromiscuousMode) * ratio),
+		OvsdpNHit:          int64(float64(sm.OvsdpNHit) * ratio),
+		OvsdpNMissed:       int64(float64(sm.OvsdpNMissed) * ratio),
+		OvsdpNLost:         int64(float64(sm.OvsdpNLost) * ratio),
+		OvsdpNMaskHit:      int64(float64(sm.OvsdpNMaskHit) * ratio),
+		OvsdpNFlows:        int64(float64(sm.OvsdpNFlows) * ratio),
+		OvsdpNMasks:        int64(float64(sm.OvsdpNMasks) * ratio),
+		OvsAppFdOpen:       int64(float64(sm.OvsAppFdOpen) * ratio),
+		OvsAppFdMax:        int64(float64(sm.OvsAppFdMax) * ratio),
+		OvsAppConnOpen:     int64(float64(sm.OvsAppConnOpen) * ratio),
+		OvsAppConnMax:      int64(float64(sm.OvsAppConnMax) * ratio),
+		//	IfPromiscuousMode:  int64(float64(sm.IfPromiscuousMode) * ratio),
 	}
 }
 
