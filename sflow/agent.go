@@ -207,9 +207,10 @@ func (sfa *Agent) feedFlowTable() {
 				LastUpdateMetric: lastUpdateMetric,
 			}
 
+			sfa.Graph.Lock()
 			tr.AddMetadata("SFlow", sfl)
-
 			tr.Commit()
+			sfa.Graph.Unlock()
 		}
 
 	}
