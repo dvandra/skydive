@@ -23,6 +23,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -2064,6 +2065,97 @@ func TestSFlowCapture(t *testing.T) {
 
 			if len(flows) != 1 {
 				return fmt.Errorf("We should receive only one flow, got: %d", len(flows))
+			}
+
+			return nil
+		}},
+	}
+
+	RunTest(t, test)
+}
+
+func TestOvsSFlowCapture(t *testing.T) {
+	test := &Test{
+		setupCmds: []Cmd{
+			{"ovs-vsctl add-br br-sfct", true},
+
+			{"ovs-vsctl add-port br-sfct sfct-intf1 -- set interface sfct-intf1 type=internal", true},
+			{"ip netns add sfct-vm1", true},
+			{"ip link set sfct-intf1 netns sfct-vm1", true},
+			{"ip netns exec sfct-vm1 ip address add 169.254.29.11/24 dev sfct-intf1", true},
+			{"ip netns exec sfct-vm1 ip link set sfct-intf1 up", true},
+
+			{"ovs-vsctl add-port br-sfct sfct-intf2 -- set interface sfct-intf2 type=internal", true},
+			{"ip netns add sfct-vm2", true},
+			{"ip link set sfct-intf2 netns sfct-vm2", true},
+			{"ip netns exec sfct-vm2 ip address add 169.254.29.12/24 dev sfct-intf2", true},
+			{"ip netns exec sfct-vm2 ip link set sfct-intf2 up", true},
+
+			{"ovs-vsctl --id=@sflow create sflow agent=lo target=\"127.0.0.1:6343\" header=128 sampling=1 polling=10 -- set bridge br-sfct sflow=@sflow", true},
+		},
+
+		injections: []TestInjection{{
+			from:  g.G.V().Has("Name", "sfct-vm1").Out().Has("Name", "sfct-intf1"),
+			to:    g.G.V().Has("Name", "sfct-vm2").Out().Has("Name", "sfct-intf2"),
+			count: 1,
+		}},
+
+		tearDownCmds: []Cmd{
+			{"ip netns del sfct-vm1", true},
+			{"ip netns del sfct-vm2", true},
+			{"ovs-vsctl del-br br-sfct", true},
+		},
+
+		captures: []TestCapture{
+			{gremlin: g.G.V().Has("Type", "host").Out().Has("Name", "br-sfct", "Type", "ovsbridge"), kind: "ovssflow", port: 6343},
+		},
+
+		mode: OneShot,
+
+		checks: []CheckFunction{func(c *CheckContext) error {
+			//node, err := c.gh.GetNode(c.gremlin.V().Has("Type", "host").Out().Has("Name", "br-sfct", "Type", "ovsbridge"))
+			//if err != nil {
+			//	return err
+			//}
+
+			sfmetrics, err := c.gh.GetSFlowMetrics(c.gremlin.V().Metrics("sflow").Aggregates())
+			if err != nil {
+				return err
+			}
+
+			if len(sfmetrics) != 1 {
+				return fmt.Errorf("We should receive only one unique element in  Array of Metric, got: %d", len(sfmetrics))
+			}
+
+			if len(sfmetrics["Aggregated"]) < 1 {
+				return fmt.Errorf("Should have one or more metrics entry, got %+v", sfmetrics["Aggregated"])
+			}
+
+			var start, totalInUc int64
+			for _, m := range sfmetrics["Aggregated"] {
+				if m.GetStart() < start {
+					j, _ := json.MarshalIndent(sfmetrics, "", "\t")
+					return fmt.Errorf("Metrics not correctly sorted (%+v)", string(j))
+				}
+				start = m.GetStart()
+
+				inUc, _ := m.GetFieldInt64("IfInUcastPkts")
+				totalInUc += inUc
+			}
+
+			// due to ratio applied during the aggregation we can't expect to get exactly
+			// the sum of the metrics.
+			if totalInUc <= 24 {
+				return fmt.Errorf("Expected at least IfInUcastPkts, got %d", totalInUc)
+			}
+
+			m, err := c.gh.GetSFlowMetric(c.gremlin.V().Metrics("sflow").Aggregates().Sum())
+			if err != nil {
+				return fmt.Errorf("Could not find metrics with: %s", "c.gremlin.V().Metrics('sflow').Aggregates().Sum()")
+			}
+
+			if inUc, _ := m.GetFieldInt64("IfInUcastPkts"); inUc != totalInUc {
+				return fmt.Errorf("Sum error %d vs %d", totalInUc, inUc)
 			}
 
 			return nil
