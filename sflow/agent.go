@@ -119,16 +119,63 @@ func (sfa *Agent) feedFlowTable() {
 			for _, sample := range sflowPacket.CounterSamples {
 				records := sample.GetRecords()
 
+				Maxuint64 := func(key uint64) uint64 {
+					if key == 18446744073709551615 {
+						key = 0
+					}
+					return key
+				}
+				Maxuint32 := func(key uint32) uint32 {
+					if key == 4294967295 {
+						key = 0
+					}
+					return key
+				}
+
 				for _, record := range records {
 					switch record.(type) {
 					case layers.SFlowGenericInterfaceCounters:
-						gen = record.(layers.SFlowGenericInterfaceCounters) //Adding Generic Interface Counters
+						gen1 := record.(layers.SFlowGenericInterfaceCounters) //Adding Generic Interface Counters
+						gen.IfInOctets += Maxuint64(gen1.IfInOctets)
+						gen.IfInUcastPkts += Maxuint32(gen1.IfInUcastPkts)
+						gen.IfInMulticastPkts += Maxuint32(gen1.IfInMulticastPkts)
+						gen.IfInBroadcastPkts += Maxuint32(gen1.IfInBroadcastPkts)
+						gen.IfInDiscards += Maxuint32(gen1.IfInDiscards)
+						gen.IfInErrors += Maxuint32(gen1.IfInErrors)
+						gen.IfInUnknownProtos += Maxuint32(gen1.IfInUnknownProtos)
+						gen.IfOutOctets += Maxuint64(gen1.IfOutOctets)
+						gen.IfOutUcastPkts += Maxuint32(gen1.IfOutUcastPkts)
+						gen.IfOutMulticastPkts += Maxuint32(gen1.IfOutMulticastPkts)
+						gen.IfOutBroadcastPkts += Maxuint32(gen1.IfOutBroadcastPkts)
+						gen.IfOutDiscards += Maxuint32(gen1.IfOutDiscards)
+						gen.IfOutErrors += Maxuint32(gen1.IfOutErrors)
+
 					case layers.SFlowOVSDPCounters:
-						ovsdp = record.(layers.SFlowOVSDPCounters) //Adding OVSDP Counters
+						ovsdp1 := record.(layers.SFlowOVSDPCounters) //Adding OVSDP Counters
+						ovsdp.NHit += Maxuint32(ovsdp1.NHit)
+						ovsdp.NMissed += Maxuint32(ovsdp1.NMissed)
+						ovsdp.NLost += Maxuint32(ovsdp1.NLost)
+						ovsdp.NMaskHit += Maxuint32(ovsdp1.NMaskHit)
+						ovsdp.NFlows += Maxuint32(ovsdp1.NFlows)
+						ovsdp.NMasks += Maxuint32(ovsdp1.NMasks)
+
 					case layers.SFlowAppresourcesCounters:
-						app = record.(layers.SFlowAppresourcesCounters) //Adding OVSAppresources Counters
+						app1 := record.(layers.SFlowAppresourcesCounters) //Adding OVSAppresources Counters
+						app.FdOpen += Maxuint32(app1.FdOpen)
+						app.FdMax += Maxuint32(app1.FdMax)
+						app.ConnOpen += Maxuint32(app1.ConnOpen)
+						app.ConnMax += Maxuint32(app1.ConnMax)
+						app.MemUsed += Maxuint64(app1.MemUsed)
+						app.MemMax += Maxuint64(app1.MemMax)
+
 					case layers.SFlowVLANCounters:
-						vlan = record.(layers.SFlowVLANCounters) //Adding Vlan Counters
+						vlan1 := record.(layers.SFlowVLANCounters) //Adding Vlan Counters
+						vlan.Octets += Maxuint64(vlan1.Octets)
+						vlan.UcastPkts += Maxuint32(vlan1.UcastPkts)
+						vlan.MulticastPkts += Maxuint32(vlan1.MulticastPkts)
+						vlan.BroadcastPkts += Maxuint32(vlan1.BroadcastPkts)
+						vlan.Discards += Maxuint32(vlan1.Discards)
+
 					}
 				}
 			}
@@ -137,15 +184,9 @@ func (sfa *Agent) feedFlowTable() {
 			tr := sfa.Graph.StartMetadataTransaction(sfa.Node)
 
 			Uint64ToInt64 := func(key uint64) int64 {
-				if key == 18446744073709551615 {
-					key = 0
-				}
 				return int64(float64(key))
 			}
 			Uint32ToInt64 := func(key uint32) int64 {
-				if key == 4294967295 {
-					key = 0
-				}
 				return int64(float64(key))
 			}
 			currMetric := &SFMetric{
