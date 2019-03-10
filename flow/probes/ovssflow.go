@@ -187,8 +187,8 @@ func (o *OvsSFlowProbesHandler) RegisterProbeOnBridge(bridgeUUID string, tid str
 		ID:         bridgeUUID,
 		Interface:  "lo",
 		HeaderSize: headerSize,
-		Sampling:   1,
-		Polling:    10,
+		Sampling:   capture.SamplingRate,
+		Polling:    capture.PollingInterval,
 		flowTable:  ft,
 	}
 

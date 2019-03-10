@@ -45,6 +45,8 @@ var (
 	reassembleTCP      bool
 	layerKeyMode       string
 	extraLayers        []string
+	samplingrate       uint32
+	pollinginterval    uint32
 )
 
 // CaptureCmd skdyive capture root command
@@ -91,6 +93,8 @@ var CaptureCreate = &cobra.Command{
 		capture.LayerKeyMode = layerKeyMode
 		capture.RawPacketLimit = rawPacketLimit
 		capture.ExtraLayers = layers
+		capture.SamplingRate = samplingrate
+		capture.PollingInterval = pollinginterval
 
 		if err := validator.Validate(capture); err != nil {
 			exitOnError(err)
@@ -198,6 +202,8 @@ func addCaptureFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&reassembleTCP, "reassamble-tcp", "", false, "Reassemble TCP packets, default: false")
 	cmd.Flags().StringVarP(&layerKeyMode, "layer-key-mode", "", "L2", "Defines the first layer used by flow key calculation, L2 or L3")
 	cmd.Flags().StringArrayVarP(&extraLayers, "extra-layer", "", []string{}, fmt.Sprintf("List of extra layers to be added to the flow, available: %s", flow.ExtraLayers(flow.ALLLayer)))
+	cmd.Flags().Uint32VarP(&samplingrate, "samplingrate", "", 1, "Sampling Rate for SFlow Flow Sampling, default: 1")
+	cmd.Flags().Uint32VarP(&pollinginterval, "pollinginterval", "", 10, "Polling Interval for SFlow Counter Sampling, 0 no counter samples, default: 10")
 }
 
 func init() {

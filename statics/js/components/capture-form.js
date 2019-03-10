@@ -68,6 +68,12 @@ Vue.component('capture-form', {
               <label for="port">Port</label>\
               <input id="port" type="number" class="form-control input-sm" v-model.number="port" min="0"/>\
             </div>\
+            <div class="form-group" v-if="captureType == \'ovssflow\'">\
+              <label for="samplingrate">Sampling Rate</label>\
+              <input id="samplingrate" type="number" class="form-control input-sm" v-model.number="samplingrate" min="1"/>\
+              <label for="pollinginterval">Counter Polling Interval</label>\
+              <input id="pollinginterval" type="number" class="form-control input-sm" v-model.number="pollinginterval" min="0"/>\
+            </div>\
             <div class="form-group">\
               <label for="capture-layer-key-mode">Layers used for Flow Key</label>\
               <select id="capture-layer-key-mode" v-model="captureLayerKeyMode" class="form-control custom-select">\
@@ -139,6 +145,8 @@ Vue.component('capture-form', {
       typeAllowed: false,
       port: 0,
       isPacketCaptureEnabled: true,
+      samplingrate: 1,
+      pollinginterval: 10,
     };
   },
 
@@ -161,7 +169,7 @@ Vue.component('capture-form', {
         ];
       }
       options.ovsbridge = [
-        {"type": "ovssflow", "desc": "Reading sFlow from OVS"},
+        {"type": "ovssflow", "desc": "Reading SFlow from OVS"},
         {"type": "pcapsocket", "desc": "Socket reading PCAP format data"}
       ];
       options.dpdkport = [
@@ -280,7 +288,7 @@ Vue.component('capture-form', {
       this.reassembleTCP = false;
       this.visible = false;
       this.captureType = "";
-      this.captureLayerKeyMode = "";
+      this.layerKeyMode = "";
     },
 
     checkQuery: function(query) {
@@ -315,12 +323,14 @@ Vue.component('capture-form', {
       capture.BPFFilter = this.bpf;
       capture.HeaderSize = this.headerSize;
       capture.RawPacketLimit = this.rawPackets;
-      capture.ExtraTCPMetric = this.tcpMetric;
+      capture.ExtraTCPMetric = this.extraTCPMetric;
       capture.Type = this.captureType;
       capture.Port = this.port;
       capture.IPDefrag = this.ipDefrag;
       capture.ReassembleTCP = this.reassembleTCP;
-      capture.LayerKeyMode = this.layerKeyMode
+      capture.LayerKeyMode = this.layerKeyMode;
+      capture.SamplingRate = this.samplingrate;
+      capture.PollingInterval = this.pollinginterval;
       return self.captureAPI.create(capture)
       .then(function(data) {
         self.$success({message: 'Capture created'});
