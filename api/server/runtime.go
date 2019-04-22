@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/skydive-project/skydive/js"
 
@@ -52,6 +53,15 @@ func RegisterAPIServer(r *js.Runtime, g *graph.Graph, gremlinParser *traversal.G
 		r, _ := r.ToValue(string(source))
 		return r
 	}
+
+	r.Set("sleep", func(call otto.FunctionCall) otto.Value {
+		if len(call.ArgumentList) != 1 || !call.Argument(0).IsNumber() {
+			return r.MakeCustomError("MissingArgument", "Sleep requires a number parameter")
+		}
+		t, _ := call.Argument(0).ToInteger()
+		time.Sleep(time.Duration(t) * time.Millisecond)
+		return otto.NullValue()
+	})
 
 	r.Set("Gremlin", func(call otto.FunctionCall) otto.Value {
 		if len(call.ArgumentList) < 1 || !call.Argument(0).IsString() {

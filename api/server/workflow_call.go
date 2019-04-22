@@ -68,7 +68,7 @@ func (wc *WorkflowCallAPIHandler) executeWorkflow(w http.ResponseWriter, r *auth
 
 	runtime.Start()
 	RegisterAPIServer(runtime, wc.graph, wc.parser, wc.apiServer)
-	ottoResult, err := runtime.ExecPromise(workflow.Source, wfCall.Params...)
+	ottoResult, err := runtime.ExecFunction(workflow.Source, wfCall.Params...)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
