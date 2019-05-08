@@ -1,0 +1,193 @@
+---
+UUID: "784c3329-0f47-449b-5c58-2d207bcfb501"
+Name: "Packet Forwarding Validation"
+Description: "Check Packet Forwarding form Src to Dst"
+Parameters:
+  - Name: source
+    Description: Source Nodes (Select Source Node)
+    Type: node
+  - Name: destination
+    Description: Destination Node (Select Destination Node)
+    Type: node
+  - Name: capture_port
+    Description: Capture Port (BPF Filter)
+    Type: string
+  - Name: Flow Application Type
+    Description: Flow Application Type (Protocol to Filter Flows)
+    Type: choice
+    Default: All
+    Values:
+      - Description: "Protocol : ICMP"
+        Value: ICMP
+      - Description: "Protocol : TCP"
+        Value: TCP
+      - Description: "Protocol : UDP"
+        Value: UDP
+      - Description: "All Protocols"
+        Value: All
+  - Name: IP Version
+    Description: IP version (IPV4/IPV6)
+    Type: choice
+    Default: All
+    Values:
+      - Description: "IP Version : IPV4"
+        Value: IPV4
+      - Description: "IP Version : IPV6"
+        value: IPV6
+      - Description: "IP Version : Both"
+        value: All
+  - Name: ID/Src-Dst Port
+    Description: Enter ICMP-IDs Like (ID1,ID2,ID3,....) or Enter Src-Dst Port No. Like (srcport1-dstport1,srcport2-dstport2,....) or enter both like (ID1,ID2,...,srcport1-dstport1,...)
+    Type: string
+  - Name: Flow Filtering Parameters
+    Description: Enter Flow Filtering Parameters as a String like (Key1=Value1,Key2=Value2,....)
+    Type: string
+  - Name: Time Duration for Capture the flows
+    Description: Time Duration to capture the flows in seconds
+    Type: integer
+Source: |
+  function PacketForwardingValidation(src, dst, bpf, app, ipVersion, idString, filterString, interval) {
+    try {
+      var capture = new Capture();
+      capture.GremlinQuery = "G.V().Has('TID', '" + src + "').ShortestPathTo(Metadata('TID', '" + dst + "'))";
+      capture.BPFFilter = bpf;
+      capture = client.captures.create(capture)
+
+      var packetInjection = new PacketInjection();
+      packetInjection.Src = "G.V().Has('TID', '" + src + "')";
+      packetInjection.Dst = "G.V().Has('TID', '" + dst + "')";
+      packetInjection.Type = "icmp4";
+      packetInjection.ICMPID = 123;
+      packetInjection.Count = 5
+
+      client.packetInjections.create(packetInjection)
+
+      var icmpID = [];
+      var ports = [];
+      var filters = [];
+      var gremlinIDstr;
+      var srcPortStr;
+      var dstPortStr;
+      var a, b = 0;
+      var str1 = idString.split(",");
+      for (var i = 0; i < str1.length; i++) {
+        if (str1[i].includes("-")) {
+          ports[a] = str1[i].split("-");
+          srcPortStr += "'" + ports[a][0] + "', ";
+          dstPortStr += "'" + ports[a][1] + "', ";
+          a++;
+        } else {
+          icmpID[b] = str1[i];
+          gremlinstr += "'" + str1[i] + "', ";
+          b++;
+        }
+      }
+      gremlinIDstr = gremlinIDstr.slice(0, -2);
+      srcPortStr = srcPortStr.slice(0, -2);
+      dstPortStr = dstPortStr.slice(0, -2);
+
+      var filtergremlin;
+      var str2 = filterString.split(",");
+      for (var i = 0; i < str2.length; i++) {
+        filters[i] = str2[i].split("=");
+        filtergremlin += "'" + filters[i][0] + "', '" + filters[i][1] + "', ";
+      }
+      filtergremlin = filtergremlin.slice(0, -2);
+
+      var timediff = interval * 1000;
+      var date1 = new Date();
+      var time1 = date1.getTime();
+
+      var finalFlowQuery;
+
+      if (ipVersion == "All") {
+        if (app == "ICMP") {
+          finalFlowQuery = "Flows().Has('Application', Regex('ICMP.*'), 'ICMP.ID', Within(" + gremlinIDstr + "), " + filtergremlin + ")";
+        }
+        else if (app == "TCP" || "UDP") {
+          finalFlowQuery = "Flows().Has('Application', " + app + ", 'Transport.A', Within(" + srcPortStr + "), 'Transport.B', Within(" + dstPortStr + "), " + filtergremlin + ")";
+        }
+        else {
+          finalFlowQuery = "Flows().HasEither('ICMP.ID', Within(" + gremlinIDstr + "), 'Transport.A', Within(" + srcPortStr + "), 'Transport.B', Within(" + dstPortStr + "), " + filtergremlin + ")";
+        }
+      }else {
+        if (app == "ICMP") {
+          finalFlowQuery = "Flows().Has('Application', Regex('ICMP.*'), 'Network.Protocol, '" + ipVersion + "', 'ICMP.ID', Within(" + gremlinIDstr + "), " + filtergremlin + ")";
+        }
+        else if (app == "TCP" || "UDP") {
+          finalFlowQuery = "Flows().Has('Application', " + app + ", 'Network.Protocol, '" + ipVersion + "', 'Transport.A', Within(" + srcPortStr + "), 'Transport.B', Within(" + dstPortStr + "), " + filtergremlin + ")";
+        }
+        else {
+          finalFlowQuery = "Flows().Has('Network.Protocol, " + ipVersion + ").HasEither('ICMP.ID', Within(" + gremlinIDstr + "), 'Transport.A', Within(" + srcPortStr + "), 'Transport.B', Within(" + dstPortStr + "), " + filtergremlin + ")";
+        }
+      }
+
+      var flows = {};
+      var path = client.gremlin.G.V().Has('TID', src).ShortestPathTo(Metadata('TID', dst)).result();
+      var pathlength = path.length;
+
+      while(timediff >=  Math.abs(new Date().getTime() - time1)) {
+        for (var i = 0; i < pathlength; i++) {
+          flows[i] = client.G.V().Has('TID', path[i].Metadata.TID).finalFlowQuery.result();
+        }
+        sleep(1000)
+      }
+
+      var analysis = {};
+      var flowlist = {};
+
+      for (var i = 0; i < flows[0].length; i++) {
+        flowlist[i]["Connectivity"] = flows[0][i].Metric.ABPackets == flows[pathlength-1][i].Metric.ABPackets && flows[0][i].Metric.BAPackets == flows[pathlength-1][i].Metric.BAPackets;
+        var pathflow = {};
+        for (var j = 0; j < pathlength; j ++) {
+          pathflow[j] = flows[j][i];
+        }
+        flowlist[i]["Flows"] = pathflow;
+        if (!flowlist[i]["Connectivity"]) {
+          for (var x = 0, y = pathlength - 1; x < y;) {
+            var z = (x + y) / 2;
+            if (x <= y) {
+            break;
+            }
+            if (flows[x][i].Metric.ABPackets != flows[x+1][i].Metric.ABPackets || flows[x][i].Metric.BAPackets != flows[x+1][i].Metric.BAPackets) {
+              z = x + 1;
+              break;
+            }
+            if (flows[y][i].Metric.ABPackets != flows[y-1][i].Metric.ABPackets || flows[y][i].Metric.BAPackets != flows[y-1][i].Metric.BAPackets) {
+              z = y - 1;
+              break;
+            }
+            if (flows[x][i].Metric.ABPackets == flows[z][i].Metric.ABPackets && flows[x][i].Metric.BAPackets == flows[z][i].Metric.BAPackets) {
+              if (flows[z][i].Metric.ABPackets != flows[z+1][i].Metric.ABPackets || flows[z][i].Metric.BAPackets != flows[z+1][i].Metric.BAPackets) {
+                z = z + 1;
+                break;
+              } else {
+                z = z + 1;
+              }
+              x = z;
+            } else {
+              if (flows[z][i].Metric.ABPackets != flows[z-1][i].Metric.ABPackets || flows[z][i].Metric.BAPackets != flows[z-1][i].Metric.BAPackets) {
+                break;
+              } else {
+                z = z - 1;
+              }
+              y = z;
+            }
+          }
+          flowlist[i]["Packet Drop"] = flows[z][i];
+        } else {
+          flowlist[i]["RTT"] = flows[0][i].Metric.RTT;
+        }
+      }
+
+      analysis["Flow Analysis"] = flowlist;
+
+      return {
+        "Analysis": analysis
+      };
+    }catch (e) {
+      console.log(e)
+    } finally {
+      if (capture.UUID) client.captures.delete(capture.UUID)
+    }
+  }
