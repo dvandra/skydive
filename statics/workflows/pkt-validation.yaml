@@ -1,0 +1,416 @@
+---
+UUID: "9662c4a1-158f-457d-641c-8bbe695dc3f4"
+Name: "Packet Flow Validation"
+Description: "Check Packet Forwarding form Source to Destination"
+Parameters:
+  - Name: source
+    Description: Source Nodes (Select Source Node)
+    Type: node
+  - Name: destination
+    Description: Destination Node (Select Destination Node)
+    Type: node
+  - Name: capture_port
+    Description: Capture Port (BPF Filter)
+    Type: string
+  - Name: Flow Application Type
+    Description: Flow Application Type (Protocol to Filter Flows)
+    Type: choice
+    Default: All
+    Values:
+      - Description: "Protocol : ICMP"
+        Value: ICMP
+      - Description: "Protocol : TCP"
+        Value: TCP
+      - Description: "Protocol : UDP"
+        Value: UDP
+      - Description: "All Protocols"
+        Value: All
+  - Name: IP Version
+    Description: IP version (IPV4/IPV6)
+    Type: choice
+    Default: All
+    Values:
+      - Description: "IP Version : IPV4"
+        Value: IPV4
+      - Description: "IP Version : IPV6"
+        value: IPV6
+      - Description: "IP Version : Both"
+        value: All
+  - Name: ID/Src-Dst Port
+    Description: Enter ICMP-IDs Like (ID1,ID2,ID3,....), Src-Dst Port No. Like (srcport1-dstport1,srcport2-dstport2,srcport3-,-dstport4...) or both like (ID1,ID2,...,srcport1-dstport1,...)
+    Type: string
+  - Name: Flow Filtering Parameters
+    Description: Enter Flow Filtering Parameters as a String like (Key1=Value1,Key2=Value2,....)
+    Type: string
+  - Name: Time Duration for Capture the flows
+    Description: Time Duration to capture the flows in seconds
+    Type: integer
+Source: |
+  function PacketForwardingValidation(src, dst, bpf, app, ipVersion, idString, filterString, interval) {
+    var parseParams = function(idString, filterString) {
+      var icmpID = [];
+      var ports = [];
+      var srcPort = [];
+      var dstPort = [];
+      var filters = [];
+      var str1 = idString.split(",");
+      for (var i = 0; i < str1.length; i++) {
+        if (str1[i].indexOf("-") >= 0) {
+          ports = str1[i].split("-");
+          srcPort.push(parseInt(ports[0]));
+          dstPort.push(parseInt(ports[0]));
+        } else {
+          icmpID.push(parseInt(str1[i]));
+        }
+      }
+      var str2 = filterString.split(",");
+      for (var i = 0; i < str2.length; i++) {
+        filters[i] = str2[i].split("=");
+      }
+      var parseparam = {"icmpID" : icmpID, "srcPort" : srcPort, "dstPort" : dstPort, "filters" : filters}
+      return parseparam;
+    }
+    var getFlows = function(src, dst, app, ipVersion, interval, parseparam) {
+      var icmpID = parseparam["icmpID"];
+      var srcPort = parseparam["srcPort"];
+      var dstPort = parseparam["dstPort"];
+      var filters = parseparam["filters"];
+      var nodes = {};
+      var paths = client.G.V().Has('TID', src).ShortestPathTo(Metadata('TID', dst), Metadata('RelationType', 'layer2')).result();
+      var path = paths[0]
+      var pathNodes = path.slice();
+      var timediff = interval * 1000;
+      sleep(timediff)
+      var G = client.gremlin.G()
+      if (ipVersion == "All") {
+        if (app == "ICMP") {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows().Has('Application', REGEX('ICMP.*'))
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in icmpID) {
+            G = G.HasEither('ICMP.ID', icmpID[i]);
+          }
+          var flows = G.Dedup('TrackingID').result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            var pathflow = {};
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+        else if (app == "TCP" || "UDP") {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows().Has('Application', app);
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in srcPort) {
+            G = G.HasEither('Transport.A', srcPort[i]);
+          }
+          for (i in dstPort) {
+            G = G.HasEither('Transport.B', dstPort[i]);
+          }
+          var flows = G.Dedup('TrackingID').result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            var pathflow = {};
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+        else {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows();
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in icmpID) {
+            G = G.HasEither('ICMP.ID', icmpID[i]);
+          }
+          for (i in srcPort) {
+            G = G.HasEither('Transport.A', srcPort[i]);
+          }
+          for (i in dstPort) {
+            G = G.HasEither('Transport.B', dstPort[i]);
+          }
+          var flows = G.Dedup('TrackingID').result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            var pathflow = {};
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+      }
+      else {
+        if (app == "ICMP") {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows().Has('Application', REGEX('ICMP.*'), 'Network.Protocol', ipVersion);
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in icmpID) {
+            G = G.HasEither('ICMP.ID', icmpID[i]);
+          }
+          var flows = G.Dedup().result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            var pathflow = {};
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+        else if (app == "TCP" || "UDP") {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows().Has('Application', app, 'Network.Protocol', ipVersion);
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in srcPort) {
+            G = G.HasEither('Transport.A', srcPort[i]);
+          }
+          for (i in dstPort) {
+            G = G.HasEither('Transport.B', dstPort[i]);
+          }
+          var flows = G.Dedup().result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+        else {
+          G = G.V().Has('TID', WITHIN(pathNodes[0].Metadata.TID, pathNodes[pathNodes.length - 1].Metadata.TID)).Flows().Has('Network.Protocol', ipVersion);
+          for (i in filters) {
+            G = G.Has(filters[i][0], filters[i][1]);
+          }
+          for (i in icmpID) {
+            G = G.HasEither('ICMP.ID', icmpID[i]);
+          }
+          for (i in srcPort) {
+            G = G.HasEither('Transport.A', srcPort[i]);
+          }
+          for (i in dstPort) {
+            G = G.HasEither('Transport.B', dstPort[i]);
+          }
+          var flows = G.Dedup('TrackingID').result();
+          var trackingID = {};
+          var pathflows = {};
+          var nodes = {};
+          var pathlength = 0;
+          var flowcount = 0;
+          for (i in flows) {
+            trackingID[flowcount] = flows[i].TrackingID;
+            pathlength = 0;
+            for (j in path) {
+              var node = path[j];
+              if (node.Metadata.Type != "ovsport") {
+                f = client.G.V().Has('TID', node.Metadata.TID).Flows().Has('TrackingID', trackingID[flowcount]).result();
+                if (f.length > 0) {
+                  pathflow[pathlength] = f[0];
+                }
+                else {
+                  pathflow[pathlength] = [];
+                }
+                nodes[pathlength] = node;
+                pathlength++;
+              }
+            }
+            pathflows[flowcount] = pathflow;
+            flowcount++;
+          }
+        }
+      }
+      var getflows = {"nodes" : nodes, "flows" : flows, "flowcount" : flowcount, "pathflows" : pathflows, "pathlength" : pathlength};
+      return getflows;
+    }
+    var dropNode = function(pathlength, pathflows, nodes) { // Need to optimize (WIP)
+      var z = 0;
+      for (var i = 0; i < pathlength - 1; i++) {
+        if (pathflows[i].length != pathflows[i+1].length) {
+          if (pathflows[i].length == 0) {
+            z = i;
+            i = pathlength;
+          } else {
+            z = i+1;
+            i = pathlength;
+          }
+        }
+        else {
+          if (pathflows[i].Metric.ABPackets != pathflows[i+1].Metric.ABPackets && (pathflows[i].Metric.ABPackets <= 0 || pathflows[i+1].Metric.ABPackets <= 0)) {
+            if (pathflows[i].Metric.ABPackets == 0) {
+              z = i;
+              i = pathlength;
+            } else {
+              z = i+1;
+              i = pathlength;;
+            }
+          }
+          else if (pathflows[i].Metric.BAPackets != pathflows[i+1].Metric.BAPackets && (pathflows[i].Metric.BAPackets <= 0 || pathflows[i+1].Metric.BAPackets <= 0)) {
+            if (pathflows[i].Metric.BAPackets == 0) {
+              z = i;
+              i = pathlength;
+            } else {
+              z = i+1;
+              i = pathlength;
+            }
+          }
+        }
+      }
+      return nodes[z];
+    }
+    var validateFlows = function(getflows) { // Need to optimize (WIP)
+      var flows = getflows["flows"];
+      var nodes = getflows["nodes"];
+      var flowcount = getflows["flowcount"];
+      var pathflows = getflows["pathflows"];
+      var pathlength = getflows["pathlength"];
+      var analysis = {};
+      var flowAnalysis = {};
+      if (flows.length == 0) {
+        flowAnalysis["Flows"] = "No Packet Flow";
+      }
+      for (var i = 0; i < flowcount; i++) {
+        if (pathflows[i][0].length == pathflows[i][pathlength - 1].length) {
+          if (pathflows[i][0].Application != "UDP") {
+            if (pathflows[i][0].Metric.ABPackets == pathflows[i][pathlength-1].Metric.ABPackets && pathflows[i][0].Metric.BAPackets == pathflows[i][pathlength-1].Metric.BAPackets && pathflows[i][0].Metric.BAPackets > 0) {
+              flowAnalysis[i] = {"Connectivity": true, "Flows": pathflows[i], "RTT" : pathflows[i][0].Metric.RTT + "ms"};
+            }
+            else if (pathflows[i][0].Metric.ABPackets == pathflows[i][pathlength-1].Metric.ABPackets && pathflows[i][0].Metric.BAPackets == pathflows[i][pathlength-1].Metric.BAPackets && pathflows[i][0].Metric.BAPackets == 0) {
+              flowAnalysis[i] = {"Connectivity": false, "Flows": pathflows[i], "Packet Drop" : {"Node": nodes[pathlength-1], "Flow": pathflows[i][pathlength-1]}};
+            }
+            else {
+              var pktDropNode = dropNode(pathlength, pathflows[i], nodes)
+              flowAnalysis[i] = {"Connectivity": false, "Flows": pathflows[i], "Packet Drop" : pktDropNode};
+            }
+          }
+          else if (pathflows[i][0].Metric.ABPackets == pathflows[i][pathlength-1].Metric.ABPackets && pathflows[i][0].Metric.BAPackets == pathflows[i][pathlength-1].Metric.BAPackets && pathflows[i][0].Metric.BAPackets == 0) {
+            flowAnalysis[i] = {"Connectivity": true, "Flows": pathflows[i], "RTT" : pathflows[i][0].Metric.RTT + "ms"};
+          }
+          else {
+            var pktDropNode = dropNode(pathlength, pathflows[i], nodes)
+            flowAnalysis[i] = {"Connectivity": false, "Flows": pathflows[i], "Packet Drop" : pktDropNode};
+          }
+        }
+        else {
+          var pktDropNode = dropNode(pathlength, pathflows[i], nodes)
+          flowAnalysis[i] = {"Connectivity": false, "Flows": pathflows[i], "Packet Drop" : pktDropNode};
+        }
+      }
+      analysis["Flow Analysis"] = flowAnalysis;
+      return analysis;
+    }
+    try {
+      var capture = new Capture();
+      capture.GremlinQuery = "G.V().Has('TID', '" + src + "').ShortestPathTo(Metadata('TID', '" + dst + "'), Metadata('RelationType', 'layer2'))";
+      capture.BPFFilter = bpf;
+      capture.SamplingRate = 1;
+      capture.PollingInterval = 10;
+      capture = client.captures.create(capture)
+      var parseparam = parseParams(idString, filterString)
+      var getflows = getFlows(src, dst, app, ipVersion, interval, parseparam)
+      var analysis = validateFlows(getflows)
+      return {"Analysis": analysis};
+    }catch (e) {
+      console.log(e)
+    } finally {
+      if (capture && capture.UUID) client.captures.delete(capture.UUID)
+    }
+  }
