@@ -1,0 +1,205 @@
+---
+UUID: "784c3329-0f47-449b-5c58-2d207bcfb501"
+Name: "FlowValidation"
+Description: "Check Packet Forwarding form Src to Dst"
+Parameters:
+  - Name: Checkpoint-1
+    Description: Select Checkpoint-1
+    Type: node
+  - Name: Checkpoint-2
+    Description: Select Checkpoint-2 (Optional)
+    Type: node
+  - Name: Protocol
+    Description: Select Protocol to Filter Flows
+    Type: choice
+    Default: ICMP
+    Values:
+      - Description: "ICMP"
+        Value: ICMP
+      - Description: "TCP"
+        Value: TCP
+      - Description: "UDP"
+        Value: UDP
+  - Name: Source-IP
+    Description: Enter Source IP
+    Type: string
+  - Name: Destination-IP
+    Description: Enter Destination IP
+    Type: string
+  - Name: ID/Port
+    Description: Enter The Destination Port or The ICMP-ID
+    Type: string
+  - Name: Time
+    Description: Time Duration to capture the flows in seconds
+    Type: integer
+Source: |
+  function PacketForwardingValidation(checkPoint1, checkPoint2, protocol, srcIP, dstIP, id, interval) {
+    var dropNode = function(pathlength, pathflow, nodes) {
+      var z = 0;
+      if (pathflow[0].length == pathflow[pathlength - 1].length && pathflow[0].length == 0) {
+        return nodes[z];
+      }
+      else {
+        for (var i = 0; i < pathlength - 1; i++) {
+          if (pathflow[i].length != pathflow[i+1].length) {
+            if (pathflow[i].length == 0) {
+              z = i;
+              i = pathlength;
+            } else {
+              z = i+1;
+              i = pathlength;
+            }
+          }
+          else {
+            if (pathflow[i].Metric.ABPackets != pathflow[i+1].Metric.ABPackets && (pathflow[i].Metric.ABPackets == 0 || pathflow[i+1].Metric.ABPackets == 0)) {
+              if (pathflow[i].Metric.ABPackets == 0) {
+                z = i;
+                i = pathlength;
+              } else {
+                z = i+1;
+                i = pathlength;;
+              }
+            }
+            else if (pathflow[i].Metric.BAPackets != pathflow[i+1].Metric.BAPackets && (pathflow[i].Metric.BAPackets == 0 || pathflow[i+1].Metric.BAPackets == 0)) {
+              if (pathflow[i].Metric.BAPackets == 0) {
+                z = i;
+                i = pathlength;
+              } else {
+                z = i+1;
+                i = pathlength;
+              }
+            }
+          }
+        }
+        return nodes[z];
+      }
+    }
+    try {
+      console.log("start")
+      console.log(JSON.stringify(checkPoint1))
+      console.log(JSON.stringify(checkPoint2))
+      console.log(JSON.stringify(srcIP))
+      console.log(JSON.stringify(dstIP))
+      console.log(JSON.stringify(id))
+  
+      var capture = new Capture();
+      if (checkPoint2 != null) {
+        capture.GremlinQuery = "G.V().Has('TID', '" + checkPoint1 + "').ShortestPathTo(Metadata('TID', '" + checkPoint2 + "'), Metadata('RelationType', 'layer2'))";
+      }else {
+        capture.GremlinQuery = "G.V().Has('TID', '" + checkPoint1 + "')";
+      }
+      capture.SamplingRate = 1;
+      capture.PollingInterval = 10;
+      capture = client.captures.create(capture)
+      var packetInjection = new PacketInjection();
+      packetInjection.Src = "G.V().Has('TID', '" + checkPoint1 + "')";
+      packetInjection.Dst = "G.V().Has('TID', '" + checkPoint2 + "')";
+      packetInjection.Type = "icmp4";
+      packetInjection.ICMPID = 123;
+      packetInjection.Count = 5;
+      client.packetInjections.create(packetInjection)
+      var timediff = interval * 1000;
+      sleep(timediff)
+      var flowAnalysis = {};
+      if (checkPoint2 == null) {
+        if (protocol == "ICMP") {
+          var flows = client.G.Flows().Has('NodeTID', checkPoint1, 'Network.A', srcIP, 'Network.B', dstIP, 'ICMP.ID', id).result();
+        }
+        else {
+          var flows = client.G.Flows().Has('NodeTID', checkPoint1, 'Network.A', srcIP, 'Network.B', dstIP, 'Transport.B', id).result();
+        }
+        console.log(JSON.stringify(flows))
+        if (flows[0] != undefined && flows[0].length >= 0) {
+          flowAnalysis[0] = {"Validation": true, "Flows": flows[0], "RTT" : flows[0].Metric.RTT + "ms"};
+        }
+        else {
+          flowAnalysis[0] = {"Validation": false, "Flows": "No Flows captured"};
+        }
+      }
+      else {
+        var paths = client.G.V().Has('TID', checkPoint1).ShortestPathTo(Metadata('TID', checkPoint2), Metadata('RelationType', 'layer2')).result();
+        var path = paths[0]
+        var nodes = {};
+        var pathflow = {};
+        var pathlength = 0;
+        if (protocol == "ICMP") {
+          for (i in path) {
+            var node = path[i];
+            if (node.Metadata.Type != "ovsport") {
+              var f = client.G.Flows().Has('NodeTID', node.Metadata.TID, 'Network.A', srcIP, 'Network.B', dstIP, 'ICMP.ID', id).result();
+              console.log(JSON.stringify(f))
+              console.log("=-- Flow-" + i + "--=")
+              if (f.length > 0) {
+                pathflow[pathlength] = f[0];
+              }
+              else {
+                pathflow[pathlength] = [];
+              }
+              nodes[pathlength] = node;
+              pathlength++;
+            }
+          }
+        }
+        else {
+          for (i in path) {
+            var node = path[i];
+            if (node.Metadata.Type != "ovsport") {
+              var f = client.G.Flows().Has('NodeTID', node.Metadata.TID, 'Network.A', srcIP, 'Network.B', dstIP, 'Transport.B', id).result();
+              console.log(JSON.stringify(f))
+              console.log("=--1--=")
+              if (f.length > 0) {
+                pathflow[pathlength] = f[0];
+              }
+              else {
+                pathflow[pathlength] = [];
+              }
+              nodes[pathlength] = node;
+              pathlength++;
+            }
+          }
+        }
+        console.log(JSON.stringify(pathflow))
+        console.log("---------------- path -----------------------------")
+        console.log(JSON.stringify(node))
+        console.log(JSON.stringify(pathlength))
+        console.log(pathflow[0].length)
+        console.log(pathflow[pathlength - 1].length)
+        if (pathflow[0].length > 0 && pathflow[0].length == pathflow[pathlength - 1].length) {
+          if (pathflow[0].Application != "UDP") {
+            if (pathflow[0].Metric.ABPackets == pathflow[pathlength-1].Metric.ABPackets && pathflow[0].Metric.BAPackets == pathflow[pathlength-1].Metric.BAPackets && pathflow[0].Metric.BAPackets > 0) {
+              console.log("1")
+              flowAnalysis[0] = {"Connectivity": true, "Flows": pathflow, "RTT" : pathflow[0].Metric.RTT + "ms"};
+            }
+            else if (pathflow[0].Metric.ABPackets == pathflow[pathlength-1].Metric.ABPackets && pathflow[0].Metric.BAPackets == pathflow[pathlength-1].Metric.BAPackets && pathflow[0].Metric.BAPackets == 0) {
+              console.log("2")
+              flowAnalysis[0] = {"Connectivity": false, "Flows": pathflow, "Packet Drop" : {"Node": nodes[pathlength-1], "Flow": pathflow[pathlength-1]}};
+            }
+            else {
+              console.log("3")
+              var pktDropNode = dropNode(pathlength, pathflow, nodes)
+              flowAnalysis[0] = {"Connectivity": false, "Flows": pathflow, "Packet Drop" : pktDropNode};
+            }
+          }
+          else if (pathflow[0].Metric.ABPackets == pathflow[pathlength-1].Metric.ABPackets && pathflow[0].Metric.BAPackets == pathflow[pathlength-1].Metric.BAPackets && pathflow[0].Metric.BAPackets == 0) {
+            console.log("4")
+            flowAnalysis[0] = {"Connectivity": true, "Flows": pathflow, "RTT" : pathflow[0].Metric.RTT + "ms"};
+          }
+          else {
+            console.log("5")
+            var pktDropNode = dropNode(pathlength, pathflow, nodes)
+            flowAnalysis[0] = {"Connectivity": false, "Flows": pathflow, "Packet Drop" : pktDropNode};
+          }
+        }
+        else {
+          console.log("6")
+          var pktDropNode = dropNode(pathlength, pathflow, nodes)
+          flowAnalysis[0] = {"Connectivity": false, "Flows": pathflow, "Packet Drop" : pktDropNode};
+        }
+      }
+      return {"Flow Analysis": flowAnalysis};
+    }catch (e) {
+      console.log(e)
+    } finally {
+      if (capture && capture.UUID) client.captures.delete(capture.UUID)
+    }
+  }
