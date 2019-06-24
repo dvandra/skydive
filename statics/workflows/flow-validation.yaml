@@ -12,6 +12,9 @@ Parameters:
   - Name: All
     Description: Create Capture on all nodes between Checkpoint-1 and Checkpoint-2 (Select Only with Checkpoint-2)
     Type: boolean
+  - Name: Check Flow Metric
+    Description: Check Flow Metric
+    Type: boolean
   - Name: Protocol
     Description: Select Protocol
     Type: choice
@@ -37,7 +40,7 @@ Parameters:
     Default: 5
     Type: integer
 Source: |
-  function FlowValidation(checkPoint1, checkPoint2, all, protocol, srcIP, dstIP, id, interval) {
+  function FlowValidation(checkPoint1, checkPoint2, all, checkMetric, protocol, srcIP, dstIP, id, interval) {
     var result = {}
 
     try {
@@ -73,7 +76,13 @@ Source: |
       var timediff = interval * 1000;
       sleep(timediff)
       var flowExpected = client.gremlin.G().V().Has('Captures.ID', capture.UUID, 'Type', NE('ovsport')).result();
-      var flowCaptured = client.gremlin.G().V().Has('Captures.ID', capture.UUID).Flows().CaptureNode().Dedup().result();
+
+      if (checkMetric) {
+        var flowCaptured = client.gremlin.G().Flows().Has('CaptureID', capture.UUID, 'Metric.ABPackets', GT(0), 'Metric.BAPackets', GT(0)).CaptureNode().Dedup().result();
+      } else {
+        var flowCaptured = client.gremlin.G().Flows().Has('CaptureID', capture.UUID).CaptureNode().Dedup().result();
+      }
+
       var noflows = [];
 
       for (var i = 0; i != flowExpected.length; i++) {
