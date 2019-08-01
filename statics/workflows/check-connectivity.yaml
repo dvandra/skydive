@@ -14,25 +14,53 @@ Description: >
       3. If flows are there and the BA-Packtes in flow-metric > 0, then return 'Connectivity = ture' else 'Connectivity = false', along with this it also returns the flows
       4. For more information about Skydive workflows please follow - 'skydive.network/blog/introduction-to-workflows.html'
 Parameters:
-  - Name: source
-    Description: Source node
+  - Name: Option
+    Description: Select Input Option for Source
+    Type: choice
+    Default: Query
+    Values:
+      - Description: "Select src Node"
+        Value: Node-Selection
+      - Description: "Enter Gremlin Expression for Source Nodes"
+        Value: Query
+  - Name: srcNode
+    Description: Select Source node
     Type: node
-  - Name: destination
-    Description: Destination node
+    Depends: Option
+    Factors:
+      - Node-Selection
+  - Name: srcQuery
+    Description: Gremlin Expression for Source
+    Type: string
+    Depends: Optionhoice
+    Default
+    Factors:
+      - Query
+  - Name: dstNode
+    Description: Select Destination node
     Type: node
+  - Name: anlysis
+    Description: Analysis (for No connectivity)
+    Type: boolean
 Source: |
-    function CheckConnectivity(from, to) {
+    function CheckConnectivity(opt, from, sQuery, to, analysis) {
       var result = {}
 
       try {
+        var icmpID = Math.floor(Math.random() * 1000);
         var capture = new Capture();
-        capture.GremlinQuery = "G.V().Has('TID', '" + from + "').ShortestPathTo(Metadata('TID', '" + to + "'))";
+        var dstNode = client.gremlin.G().V().Has('TID', '" + to + "').result();
+        if (opt == Query) {
+          capture.GremlinQuery = sQuery + ".ShortestPathTo(Metadata('TID', '" + to + "'), Metadata('RelationType', 'layer2'))";
+        } else {
+          capture.GremlinQuery = "G.V().Has('TID', '" + from + "').ShortestPathTo(Metadata('TID', '" + to + "'), Metadata('RelationType', 'layer2'))";
+        }
 
         var packetInjection = new PacketInjection();
-        packetInjection.Src = "G.V().Has('TID', '" + from + "')"
+        packetInjection.Src = sQuery
         packetInjection.Dst = "G.V().Has('TID', '" + to + "')"
         packetInjection.Type = "icmp4"
-        packetInjection.ICMPID = Math.floor(Math.random() * 1000);
+        packetInjection.ICMPID = icmpID;
         packetInjection.Count = 5
 
         capture = client.captures.create(capture)
